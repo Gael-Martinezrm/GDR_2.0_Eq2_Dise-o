@@ -1,103 +1,80 @@
-"""
-app/modules/cajas/model.py
-
-Modelo de datos para el módulo de cajas.
-Maneja todas las operaciones de BD relacionadas con cajas.
-"""
-
-from app.db.connection import get_conn
-
+﻿from app.db.connection import get_conn
 
 def obtener_cajas(solo_activas=True):
-    """
-    Obtiene la lista de cajas del sistema.
-
-    Args:
-        solo_activas (bool): Si True, solo retorna cajas activas.
-
-    Returns:
-        list: Lista de cajas como diccionarios.
-    """
-    pass
-
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        if solo_activas:
+            cursor.execute("SELECT * FROM cajas WHERE activa = 1 ORDER BY numero_caja ASC")
+        else:
+            cursor.execute("SELECT * FROM cajas ORDER BY numero_caja ASC")
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
 
 def obtener_caja_por_id(id_caja):
-    """
-    Obtiene los detalles de una caja específica.
-
-    Args:
-        id_caja (int): ID de la caja.
-
-    Returns:
-        dict: Datos de la caja o None si no existe.
-    """
-    pass
-
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM cajas WHERE id = ? LIMIT 1", (id_caja,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
 
 def insertar_caja(nombre, numero_caja, ubicacion=""):
-    """
-    Inserta una nueva caja en la base de datos.
-
-    Args:
-        nombre (str): Nombre descriptivo de la caja.
-        numero_caja (str): Número identificador de la caja.
-        ubicacion (str): Ubicación física de la caja.
-
-    Returns:
-        int: ID de la caja insertada.
-
-    Raises:
-        Exception: Si hay error en la BD o nombre duplicado.
-    """
-    pass
-
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO cajas (nombre, numero_caja, ubicacion, activa) VALUES (?, ?, ?, 1)", (nombre.strip(), numero_caja.strip(), ubicacion.strip()))
+        conn.commit()
+        return cursor.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def actualizar_caja(id_caja, nombre, numero_caja, ubicacion):
-    """
-    Actualiza los datos de una caja.
-
-    Args:
-        id_caja (int): ID de la caja a actualizar.
-        nombre (str): Nuevo nombre.
-        numero_caja (str): Nuevo número.
-        ubicacion (str): Nueva ubicación.
-
-    Returns:
-        bool: True si se actualizó exitosamente.
-
-    Raises:
-        Exception: Si hay error en la BD.
-    """
-    pass
-
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE cajas SET nombre = ?, numero_caja = ?, ubicacion = ?, fecha_modificacion = CURRENT_TIMESTAMP WHERE id = ?", (nombre.strip(), numero_caja.strip(), ubicacion.strip(), id_caja))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def toggle_activa(id_caja):
-    """
-    Activa o desactiva una caja (invierte su estado).
-
-    Args:
-        id_caja (int): ID de la caja.
-
-    Returns:
-        bool: Nuevo estado (True=activa, False=inactiva).
-
-    Raises:
-        Exception: Si hay error en la BD.
-    """
-    pass
-
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT activa FROM cajas WHERE id = ?", (id_caja,))
+        row = cursor.fetchone()
+        if row is None:
+            raise Exception(f"Caja con id {id_caja} no encontrada.")
+        nuevo_estado = 0 if row["activa"] else 1
+        cursor.execute("UPDATE cajas SET activa = ?, fecha_modificacion = CURRENT_TIMESTAMP WHERE id = ?", (nuevo_estado, id_caja))
+        conn.commit()
+        return bool(nuevo_estado)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 def eliminar_caja(id_caja):
-    """
-    Elimina una caja de la base de datos.
-
-    Args:
-        id_caja (int): ID de la caja a eliminar.
-
-    Returns:
-        bool: True si se eliminó exitosamente.
-
-    Raises:
-        Exception: Si hay error en la BD.
-    """
-    pass
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM cajas WHERE id = ?", (id_caja,))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

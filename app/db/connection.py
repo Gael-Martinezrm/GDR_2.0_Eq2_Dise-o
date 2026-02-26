@@ -13,6 +13,9 @@ from pathlib import Path
 # Ruta de la base de datos
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "retiros.db"
 
+# Ruta del esquema SQL
+SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+
 
 def get_conn():
     """
@@ -26,6 +29,7 @@ def get_conn():
 
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row  # Permite acceder a las columnas por nombre
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -34,13 +38,20 @@ def init_db():
     Inicializa la base de datos creando las tablas si no existen.
 
     Lee el archivo schema.sql y ejecuta los comandos para crear las tablas.
-    Luego ejecuta seed.py para cargar datos iniciales.
+    Luego ejecuta seed() para cargar datos iniciales.
     """
-    # TODO: Implementar inicialización de la BD
-    # 1. Leer schema.sql
-    # 2. Ejecutar CREATE TABLE IF NOT EXISTS
-    # 3. Llamar a seed() para datos iniciales
-    pass
+    conn = get_conn()
+    try:
+        with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
+            schema_sql = f.read()
+        conn.executescript(schema_sql)
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Cargar datos iniciales (usuario admin + cajas base)
+    from app.db.seed import seed
+    seed()
 
 
 def close_conn(conn):
