@@ -5,6 +5,7 @@ Funciones auxiliares y utilidades generales.
 """
 
 import hashlib
+import re
 from datetime import datetime, timedelta
 
 
@@ -46,7 +47,10 @@ def format_currency(valor):
         str: Cantidad formateada con símbolo $ y 2 decimales.
                 Ejemplo: "$1,234.56"
     """
-    pass
+    try:
+        return f"${float(valor):,.2f}"
+    except (TypeError, ValueError):
+        return "$0.00"
 
 
 def format_date(fecha, formato="%d/%m/%Y"):
@@ -55,7 +59,7 @@ def format_date(fecha, formato="%d/%m/%Y"):
 
     Args:
         fecha (datetime.date o datetime.datetime): Fecha a formatear.
-        formato (str): Formato desdeado. Default "%d/%m/%Y".
+        formato (str): Formato deseado. Default "%d/%m/%Y".
 
     Returns:
         str: Fecha formateada como string.
@@ -76,7 +80,11 @@ def validate_date(fecha_string, formato="%d/%m/%Y"):
     Returns:
         tuple: (bool, datetime.date o None) - (Es válida, Objeto date si es válida).
     """
-    pass
+    try:
+        fecha = datetime.strptime(fecha_string, formato).date()
+        return True, fecha
+    except (ValueError, TypeError):
+        return False, None
 
 
 def get_fecha_inicio_semana(fecha=None):
@@ -136,7 +144,6 @@ def get_fecha_fin_mes(fecha=None):
     """
     if fecha is None:
         fecha = datetime.today().date()
-    # Ir al primer día del próximo mes y restar un día
     if fecha.month == 12:
         return fecha.replace(year=fecha.year + 1, month=1, day=1) - timedelta(days=1)
     else:
@@ -170,4 +177,6 @@ def is_valid_username(username):
     Returns:
         bool: True si es válido, False si no.
     """
-    pass
+    if not username or len(username) < 3:
+        return False
+    return bool(re.match(r"^[a-zA-Z0-9_]+$", username))
