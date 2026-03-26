@@ -11,16 +11,7 @@ from typing import List, Dict, Optional
 
 
 def obtener_retiros(solo_activos=True, fecha=None):
-    """
-    Obtiene todos los retiros, opcionalmente filtrados por fecha.
-    
-    Args:
-        solo_activos (bool): Si True, solo retiros activos (no implementado aún)
-        fecha (date): Fecha para filtrar retiros
-    
-    Returns:
-        list: Lista de retiros con información de caja y usuario
-    """
+    """Obtiene todos los retiros, opcionalmente filtrados por fecha."""
     conn = get_conn()
     cursor = conn.cursor()
     try:
@@ -57,15 +48,7 @@ def obtener_retiros(solo_activos=True, fecha=None):
 
 
 def obtener_retiros_por_fecha(fecha):
-    """
-    Obtiene todos los retiros de una fecha específica.
-    
-    Args:
-        fecha (datetime.date): Fecha a consultar.
-    
-    Returns:
-        list: Lista de retiros en esa fecha.
-    """
+    """Obtiene todos los retiros de una fecha específica."""
     conn = get_conn()
     cursor = conn.cursor()
     try:
@@ -93,16 +76,7 @@ def obtener_retiros_por_fecha(fecha):
 
 
 def obtener_retiros_por_caja_y_fecha(id_caja, fecha):
-    """
-    Obtiene retiros de una caja específica en una fecha.
-    
-    Args:
-        id_caja (int): ID de la caja.
-        fecha (datetime.date): Fecha a consultar.
-    
-    Returns:
-        list: Lista de retiros filtrados.
-    """
+    """Obtiene retiros de una caja específica en una fecha."""
     conn = get_conn()
     cursor = conn.cursor()
     try:
@@ -126,56 +100,54 @@ def obtener_retiros_por_caja_y_fecha(id_caja, fecha):
 
 
 def obtener_retiro_por_id(id_retiro):
-    """
-    Obtiene los detalles de un retiro específico.
-    
-    Args:
-        id_retiro (int): ID del retiro.
-    
-    Returns:
-        dict: Datos del retiro o None si no existe.
-    """
+    """Obtiene los detalles de un retiro específico."""
     conn = get_conn()
     cursor = conn.cursor()
     try:
         cursor.execute("""
             SELECT 
-                r.*,
+                r.id,
+                r.monto,
+                r.motivo,
+                r.observaciones,
+                r.fecha_retiro,
+                r.fecha_registro,
+                c.id as caja_id,
                 c.nombre as nombre_caja,
                 c.numero_caja,
+                u.id as usuario_id,
                 u.nombre as nombre_usuario,
                 u.usuario as username
             FROM retiros r
-            JOIN cajas c ON r.id_caja = c.id
-            JOIN usuarios u ON r.id_usuario = u.id
-            WHERE r.id = ? LIMIT 1
+            LEFT JOIN cajas c ON r.id_caja = c.id
+            LEFT JOIN usuarios u ON r.id_usuario = u.id
+            WHERE r.id = ?
         """, (id_retiro,))
         row = cursor.fetchone()
-        return dict(row) if row else None
+        if row:
+            return dict(row)
+        return None
     finally:
         conn.close()
 
 
 def insertar_retiro(id_usuario, id_caja, monto, motivo="", observaciones=""):
-    """
-    Inserta un nuevo retiro en la base de datos.
+    """Inserta un nuevo retiro en la base de datos."""
+    # Validaciones de negocio
+    if monto <= 0:
+        raise ValueError("El monto debe ser mayor a cero")
     
-    Args:
-        id_usuario (int): ID del usuario que registra el retiro.
-        id_caja (int): ID de la caja donde se realiza el retiro.
-        monto (float): Cantidad de dinero retirado.
-        motivo (str): Razón o motivo del retiro.
-        observaciones (str): Notas u observaciones adicionales.
-    
-    Returns:
-        int: ID del retiro insertado.
-    
-    Raises:
-        Exception: Si hay error en la BD.
-    """
     conn = get_conn()
     cursor = conn.cursor()
     try:
+        # Verificar que la caja existe y está activa
+        cursor.execute("SELECT activa FROM cajas WHERE id = ?", (id_caja,))
+        caja = cursor.fetchone()
+        if not caja:
+            raise ValueError(f"La caja con ID {id_caja} no existe")
+        if not caja['activa']:
+            raise ValueError("La caja está desactivada, no se pueden registrar retiros")
+        
         cursor.execute("""
             INSERT INTO retiros 
             (id_usuario, id_caja, monto, motivo, fecha_retiro, observaciones) 
@@ -190,36 +162,26 @@ def insertar_retiro(id_usuario, id_caja, monto, motivo="", observaciones=""):
         ))
         conn.commit()
         return cursor.lastrowid
-    except Exception:
+    except Exception as e:
         conn.rollback()
-        raise
+        if "FOREIGN KEY constraint failed" in str(e):
+            raise Exception("El usuario o caja seleccionados no existen")
+        raise e
     finally:
         conn.close()
 
 
 def actualizar_retiro(id_retiro, monto, motivo, observaciones):
-    """
-    Actualiza los datos de un retiro existente.
+    """Actualiza los datos de un retiro existente."""
+    if monto <= 0:
+        raise ValueError("El monto debe ser mayor a cero")
     
-    Args:
-        id_retiro (int): ID del retiro a actualizar.
-        monto (float): Nuevo monto.
-        motivo (str): Nuevo motivo.
-        observaciones (str): Nuevas observaciones.
-    
-    Returns:
-        bool: True si se actualizó correctamente.
-    
-    Raises:
-        Exception: Si hay error en la BD.
-    """
     conn = get_conn()
     cursor = conn.cursor()
     try:
         cursor.execute("""
             UPDATE retiros 
-            SET monto = ?, motivo = ?, observaciones = ?, 
-                fecha_modificacion = CURRENT_TIMESTAMP 
+            SET monto = ?, motivo = ?, observaciones = ? 
             WHERE id = ?
         """, (monto, motivo.strip(), observaciones.strip(), id_retiro))
         conn.commit()
@@ -232,18 +194,7 @@ def actualizar_retiro(id_retiro, monto, motivo, observaciones):
 
 
 def eliminar_retiro(id_retiro):
-    """
-    Elimina un retiro de la base de datos.
-    
-    Args:
-        id_retiro (int): ID del retiro a eliminar.
-    
-    Returns:
-        bool: True si se eliminó exitosamente.
-    
-    Raises:
-        Exception: Si hay error en la BD.
-    """
+    """Elimina un retiro de la base de datos."""
     conn = get_conn()
     cursor = conn.cursor()
     try:
@@ -258,15 +209,7 @@ def eliminar_retiro(id_retiro):
 
 
 def obtener_total_diario(fecha=None):
-    """
-    Calcula el total de retiros en un día.
-    
-    Args:
-        fecha (datetime.date): Fecha a consultar. Si None, usa hoy.
-    
-    Returns:
-        float: Monto total de retiros en el día.
-    """
+    """Calcula el total de retiros en un día."""
     if fecha is None:
         fecha = date.today()
     
@@ -285,16 +228,7 @@ def obtener_total_diario(fecha=None):
 
 
 def obtener_retiros_por_periodo(fecha_inicio, fecha_fin):
-    """
-    Obtiene retiros dentro de un rango de fechas.
-    
-    Args:
-        fecha_inicio (datetime.date): Fecha inicial.
-        fecha_fin (datetime.date): Fecha final (inclusive).
-    
-    Returns:
-        list: Lista de retiros en el período.
-    """
+    """Obtiene retiros dentro de un rango de fechas."""
     conn = get_conn()
     cursor = conn.cursor()
     try:
@@ -319,15 +253,7 @@ def obtener_retiros_por_periodo(fecha_inicio, fecha_fin):
 
 
 def obtener_estadisticas_diarias(fecha=None):
-    """
-    Obtiene estadísticas completas del día.
-    
-    Args:
-        fecha (datetime.date): Fecha a consultar.
-    
-    Returns:
-        dict: Diccionario con total, cantidad, promedio, max, min.
-    """
+    """Obtiene estadísticas completas del día."""
     if fecha is None:
         fecha = date.today()
     
@@ -348,7 +274,6 @@ def obtener_estadisticas_diarias(fecha=None):
         stats = dict(cursor.fetchone())
         stats["fecha"] = fecha.isoformat()
         
-        # Estadísticas por caja
         cursor.execute("""
             SELECT 
                 c.nombre,
