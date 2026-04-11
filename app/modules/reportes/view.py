@@ -248,7 +248,7 @@ def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     )
 
     # ── Encabezado del documento ──────────────────────────────────────────────
-    story.append(Paragraph("Reporte de Retiros", titulo_style))
+    story.append(Paragraph("Reporte de Retiros - OfficeMax", titulo_style))
     story.append(Paragraph(f"Tipo: {tipo}  ·  Período: {periodo}", subtitulo_style))
     story.append(Paragraph(
         f"Generado el {datetime.now().strftime('%d/%m/%Y')} a las {datetime.now().strftime('%H:%M')} hrs",
@@ -356,7 +356,7 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     """Genera un .xlsx profesional con la tabla de retiros usando openpyxl."""
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Reporte de Retiros"
+    ws.title = "Reporte de Retiros - OfficeMax"
 
     # ── Colores ───────────────────────────────────────────────────────────────
     COLOR_AZUL_OSCURO = "0D2B6B"
@@ -381,7 +381,7 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
 
     # ── Fila 2: Título principal ──────────────────────────────────────────────
     ws.merge_cells("A2:E2")
-    ws["A2"] = "REPORTE DE RETIROS"
+    ws["A2"] = "REPORTE DE RETIROS - OFFICEMAX"
     ws["A2"].font      = Font(name="Calibri", bold=True, color=COLOR_BLANCO, size=16)
     ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
     ws["A2"].fill      = PatternFill("solid", fgColor=COLOR_AZUL_OSCURO)
