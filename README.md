@@ -111,9 +111,7 @@ GDR_2.0_Eq2_Dise-o/
 │   ├── test_retiros.py
 │   └── test_usuarios.py
 │
-└── docs/                           # Documentación
-    ├── arquitectura.md             # Descripción de la arquitectura del sistema
-    └── manual_usuario.md           # Manual de uso para el usuario final
+
 ```
 
 > **Nota:** Los directorios `build/` y `dist/` son generados automáticamente por PyInstaller al compilar el ejecutable con `compilar.bat`. No forman parte del código fuente.
