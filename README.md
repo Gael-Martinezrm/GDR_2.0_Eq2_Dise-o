@@ -24,7 +24,7 @@ Sistema de escritorio construido con Python, tkinter y SQLite que permite:
 
 ## Requisitos
 
-- Python 3.8+
+- Python 3.13+
 - tkinter (incluido con Python)
 - SQLite3 (incluido con Python)
 - Ver `requirements.txt` para dependencias adicionales
@@ -44,19 +44,79 @@ Sistema de escritorio construido con Python, tkinter y SQLite que permite:
 ## Estructura del Proyecto
 
 ```
-sistema_retiros/
-├── main.py                 # Punto de entrada
-├── app/
-│   ├── db/                # Módulo de base de datos
-│   ├── auth/              # Módulo de autenticación
-│   ├── modules/           # Módulos funcionales (retiros, cajas, usuarios, reportes)
-│   ├── ui/                # Interfaz gráfica (ventanas principales)
-│   └── utils/             # Funciones auxiliares
-├── data/                  # Almacenamiento de archivos (DB, etc)
-├── exports/               # Archivos exportados (PDF, Excel)
-├── tests/                 # Pruebas unitarias
-└── docs/                  # Documentación
+GDR_2.0_Eq2_Dise-o/
+├── main.py                         # Punto de entrada: inicializa DB y lanza login
+├── requirements.txt                # Dependencias del proyecto (openpyxl, reportlab)
+├── compilar.bat                    # Script para generar el ejecutable con PyInstaller
+├── GDR_Sistema_Retiros.spec        # Configuración de PyInstaller
+│
+├── app/                            # Paquete principal de la aplicación
+│   ├── __init__.py
+│   ├── auth/                       # Módulo de autenticación
+│   │   ├── __init__.py
+│   │   ├── login.py                # Ventana de login
+│   │   └── session.py              # Manejo de sesión activa
+│   │
+│   ├── db/                         # Módulo de base de datos
+│   │   ├── __init__.py
+│   │   ├── connection.py           # Conexión SQLite e inicialización
+│   │   ├── schema.sql              # Definición del esquema de tablas
+│   │   └── seed.py                 # Datos iniciales (usuario admin, cajas)
+│   │
+│   ├── modules/                    # Módulos funcionales (patrón Model-View)
+│   │   ├── __init__.py
+│   │   ├── cajas/                  # Gestión de cajas físicas
+│   │   │   ├── __init__.py
+│   │   │   ├── model.py            # Lógica y acceso a datos de cajas
+│   │   │   └── view.py             # Pantalla de administración de cajas
+│   │   │
+│   │   ├── calculos/               # Cálculos de totales y agregaciones
+│   │   │   ├── __init__.py
+│   │   │   └── totales.py          # Funciones para dashboard y reportes
+│   │   │
+│   │   ├── reportes/               # Generación y exportación de reportes
+│   │   │   ├── __init__.py
+│   │   │   ├── export_pdf.py       # Exportación a PDF (reportlab)
+│   │   │   ├── model.py            # Consultas y lógica de reportes
+│   │   │   └── view.py             # Pantalla de reportes
+│   │   │
+│   │   ├── retiros/                # Registro y consulta de retiros
+│   │   │   ├── __init__.py
+│   │   │   ├── model.py            # Lógica y acceso a datos de retiros
+│   │   │   └── view.py             # Pantalla de retiros
+│   │   │
+│   │   └── usuarios/               # Administración de usuarios
+│   │       ├── __init__.py
+│   │       ├── model.py            # Lógica y acceso a datos de usuarios
+│   │       └── view.py             # Pantalla de administración de usuarios
+│   │
+│   ├── ui/                         # Interfaz principal de la aplicación
+│   │   ├── __init__.py
+│   │   ├── components.py           # Widgets y componentes reutilizables
+│   │   ├── dashboard.py            # Pantalla principal / dashboard
+│   │   └── main_window.py          # Ventana principal con navegación
+│   │
+│   └── utils/                      # Utilidades y funciones auxiliares
+│       ├── __init__.py
+│       └── helpers.py              # Funciones de fechas, formateo, etc.
+│
+├── data/                           # Almacenamiento en tiempo de ejecución
+│   └── retiros.db                  # Base de datos SQLite (generada al iniciar)
+│
+├── tests/                          # Pruebas unitarias
+│   ├── __init__.py
+│   ├── test_cajas.py
+│   ├── test_calculos.py
+│   ├── test_reportes.py
+│   ├── test_retiros.py
+│   └── test_usuarios.py
+│
+└── docs/                           # Documentación
+    ├── arquitectura.md             # Descripción de la arquitectura del sistema
+    └── manual_usuario.md           # Manual de uso para el usuario final
 ```
+
+> **Nota:** Los directorios `build/` y `dist/` son generados automáticamente por PyInstaller al compilar el ejecutable con `compilar.bat`. No forman parte del código fuente.
 
 ## Arquitectura
 
@@ -72,16 +132,25 @@ Todos los módulos centralizan la conexión a SQLite a través de `app/db/connec
 - **Contraseña**: admin123
 - **Rol**: Administrador
 
-## Desarrollo
+- **Usuario**: gerente
+- **Contraseña**: gerente123
+- **Rol**: Gerente
 
-Para información sobre la arquitectura, consultar `docs/arquitectura.md`
+- **Usuario**: operador
+- **Contraseña**: operador123
+- **Rol**: Operador
 
-Para el manual del usuario, consultar `docs/manual_usuario.md`
+## Compilar a Ejecutable
+
+Para generar el ejecutable de Windows:
+
+```bat
+compilar.bat
+```
+
+El ejecutable resultante se encontrará en `dist/SistemaRetiros/SistemaRetiros.exe`.
+
 
 ## Autor
 
 Equipo 2 - GDR 2.0
-
-## Licencia
-
-Privada

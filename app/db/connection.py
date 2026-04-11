@@ -1,28 +1,49 @@
 """
 app/db/connection.py
 
-Gestión de conexión a la base de datos SQLite.
-Proporciona función centralizada para obtener conexiones.
+Gestion de conexion a la base de datos SQLite.
+Proporciona funcion centralizada para obtener conexiones.
 """
 
 import sqlite3
+import sys
 import os
 from pathlib import Path
 
 
-# Ruta de la base de datos
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "retiros.db"
+def _get_base_dir() -> Path:
+    """
+    Devuelve la carpeta raiz donde vive el ejecutable (o el proyecto en dev).
 
-# Ruta del esquema SQL
-SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+    - En desarrollo normal: carpeta raiz del proyecto (3 niveles arriba de este archivo)
+    - Dentro del .exe generado por PyInstaller: carpeta donde esta SistemaRetiros.exe
+    """
+    if getattr(sys, "frozen", False):
+        # Ejecutando como .exe — sys.executable es la ruta al .exe
+        return Path(sys.executable).parent
+    else:
+        # Ejecutando como script Python normal
+        return Path(__file__).parent.parent.parent
+
+
+BASE_DIR = _get_base_dir()
+
+# Ruta de la base de datos — siempre junto al ejecutable en data/retiros.db
+DB_PATH = BASE_DIR / "data" / "retiros.db"
+
+# Ruta del esquema SQL — empaquetado dentro del exe en app/db/schema.sql
+if getattr(sys, "frozen", False):
+    SCHEMA_PATH = Path(sys._MEIPASS) / "app" / "db" / "schema.sql"
+else:
+    SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 
 def get_conn():
     """
-    Obtiene una conexión a la base de datos SQLite.
+    Obtiene una conexion a la base de datos SQLite.
 
     Returns:
-        sqlite3.Connection: Conexión a la base de datos con row_factory configurado.
+        sqlite3.Connection: Conexion a la base de datos con row_factory configurado.
     """
     # Crear directorio data si no existe
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -56,10 +77,10 @@ def init_db():
 
 def close_conn(conn):
     """
-    Cierra la conexión a la base de datos.
+    Cierra la conexion a la base de datos.
 
     Args:
-        conn (sqlite3.Connection): Conexión a cerrar.
+        conn (sqlite3.Connection): Conexion a cerrar.
     """
     if conn:
         conn.close()

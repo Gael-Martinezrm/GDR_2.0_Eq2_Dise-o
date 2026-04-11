@@ -164,7 +164,7 @@ class _DialogoUsuario(tk.Toplevel):
         self.resizable(False, False)
         self.configure(bg=C_WHITE)
         self.grab_set()
-        self._centrar(400, 310 if not self.es_edicion else 280)
+        self._centrar(400, 330 if not self.es_edicion else 300)
         self._build(usuario)
 
     def _build(self, u):
@@ -220,7 +220,7 @@ class _DialogoUsuario(tk.Toplevel):
         # Botones
         frm_btns = tk.Frame(frm, bg=C_WHITE)
         row_btns = 7 if not self.es_edicion else 5
-        frm_btns.grid(row=row_btns, column=0, columnspan=2, sticky="e")
+        frm_btns.grid(row=row_btns, column=0, columnspan=2, sticky="e", pady=(0, 16))
 
         tk.Button(frm_btns, text="Cancelar", command=self.destroy,
                   bg="#ECEFF1", fg=C_TEXT, relief="flat", cursor="hand2",
@@ -270,7 +270,7 @@ class _DialogoPassword(tk.Toplevel):
         self.resizable(False, False)
         self.configure(bg=C_WHITE)
         self.grab_set()
-        self._centrar(360, 220)
+        self._centrar(360, 240)
         self._build(nombre)
 
     def _build(self, nombre):
@@ -289,7 +289,7 @@ class _DialogoPassword(tk.Toplevel):
                      fill="x", ipady=6, pady=(3, 16))
 
         frm_btns = tk.Frame(frm, bg=C_WHITE)
-        frm_btns.pack(anchor="e")
+        frm_btns.pack(anchor="e", pady=(0, 16))
         tk.Button(frm_btns, text="Cancelar", command=self.destroy,
                   bg="#ECEFF1", fg=C_TEXT, relief="flat", cursor="hand2",
                   font=("Arial", 10), padx=12, pady=6).pack(

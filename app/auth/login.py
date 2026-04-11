@@ -73,7 +73,7 @@ class LoginWindow(tk.Tk):
 
         # ── Panel de formulario ───────────────────────────────────────────────
         frm_form = tk.Frame(self, bg=C_WHITE, padx=40, pady=32)
-        frm_form.pack(fill="both", expand=True, padx=30, pady=20)
+        frm_form.pack(fill="both", expand=True)
 
         tk.Label(frm_form, text="Iniciar sesión",
                  bg=C_WHITE, fg=C_TEXT,
