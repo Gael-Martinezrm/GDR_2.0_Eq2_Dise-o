@@ -2,7 +2,7 @@
 app/modules/retiros/view.py
 
 Interfaz gráfica del módulo de retiros.
-Permite registrar y visualizar retiros de efectivo con columnas detalladas y centradas.
+Permite registrar, editar, eliminar y visualizar retiros de efectivo.
 """
 
 import tkinter as tk
@@ -16,12 +16,13 @@ from app.modules.cajas import model as cajas_model
 from app.ui.components import styled_button, make_treeview, page_header
 
 # Paleta de colores
-C_BG     = "#F0F2F5"
-C_WHITE  = "#FFFFFF"
-C_TEXT   = "#212121"
-C_ACCENT = "#1976D2"
-C_DANGER = "#C62828"
+C_BG      = "#F0F2F5"
+C_WHITE   = "#FFFFFF"
+C_TEXT    = "#212121"
+C_ACCENT  = "#1976D2"
+C_DANGER  = "#C62828"
 C_SUCCESS = "#2E7D32"
+C_WARN    = "#E65100"
 
 
 # ── Selector de fecha (calendario popup) ────────────────────────────────────
@@ -158,56 +159,90 @@ class RetirosView(tk.Frame):
         self._refresh_retiros()
 
     def _create_widgets(self):
-        sesion = Session()
         page_header(self, "Registro de Retiros").pack(fill="x")
 
-        # Panel superior
+        # Panel superior — botones de acción
         frm_superior = tk.Frame(self, bg=C_BG, pady=10, padx=16)
         frm_superior.pack(fill="x")
 
-        styled_button(frm_superior, "Nuevo Retiro", self._on_nuevo_retiro, width=15).pack(side="left", padx=(0, 20))
+        styled_button(frm_superior, "Nuevo Retiro", self._on_nuevo_retiro, width=14).pack(side="left", padx=(0, 6))
 
+        # Botón Editar
+        self.btn_editar = tk.Button(
+            frm_superior, text="Editar",
+            command=self._on_editar_retiro,
+            bg=C_ACCENT, fg=C_WHITE,
+            activebackground=C_ACCENT, activeforeground=C_WHITE,
+            disabledforeground=C_WHITE,
+            relief="flat", cursor="hand2",
+            font=("Arial", 10, "bold"),
+            padx=10, pady=5,
+            state="disabled"
+        )
+        self.btn_editar.pack(side="left", padx=(0, 6))
+
+        # Botón Eliminar
+        self.btn_eliminar = tk.Button(
+            frm_superior, text="Eliminar",
+            command=self._on_eliminar_retiro,
+            bg=C_DANGER, fg=C_WHITE,
+            activebackground=C_DANGER, activeforeground=C_WHITE,
+            disabledforeground=C_WHITE,
+            relief="flat", cursor="hand2",
+            font=("Arial", 10, "bold"),
+            padx=10, pady=5,
+            state="disabled"
+        )
+        self.btn_eliminar.pack(side="left", padx=(0, 20))
+
+        # Filtros
         frm_filtros = tk.Frame(frm_superior, bg=C_BG)
         frm_filtros.pack(side="left", fill="x", expand=True)
 
         tk.Label(frm_filtros, text="Fecha:", bg=C_BG, fg=C_TEXT).pack(side="left", padx=(0, 5))
         self.filtro_fecha = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
-        
+
         frm_fecha = tk.Frame(frm_filtros, bg=C_BG)
         frm_fecha.pack(side="left", padx=(0, 15))
         self.entry_fecha = tk.Entry(frm_fecha, textvariable=self.filtro_fecha, width=12, relief="solid", bd=1)
         self.entry_fecha.pack(side="left", ipady=3)
 
-        btn_cal = tk.Button(
-            frm_fecha, text="📅", 
-            command=self._abrir_calendario, 
-            bg=C_BG, fg=C_ACCENT, 
+        tk.Button(
+            frm_fecha, text="📅",
+            command=self._abrir_calendario,
+            bg=C_BG, fg=C_ACCENT,
             relief="flat", cursor="hand2",
-            font=("Arial", 16) 
-        )
-        btn_cal.pack(side="left", padx=5)
+            font=("Arial", 16)
+        ).pack(side="left", padx=5)
 
         self.filtro_caja = tk.StringVar(value="Todas")
-        self.combo_caja = ttk.Combobox(frm_filtros, textvariable=self.filtro_caja, values=["Todas"], width=15, state="readonly")
+        self.combo_caja = ttk.Combobox(frm_filtros, textvariable=self.filtro_caja,
+                                       values=["Todas"], width=15, state="readonly")
         self.combo_caja.pack(side="left", padx=(0, 10))
 
         styled_button(frm_filtros, "Filtrar", self._on_filtrar, width=8).pack(side="left")
 
-        # TABLA DE RETIROS
+        # Tabla de retiros
         frm_tabla = tk.Frame(self, bg=C_BG, padx=16, pady=4)
         frm_tabla.pack(fill="both", expand=True)
 
-        columnas = ["Retiro #", "Transacción #", "Fecha", "Hora Depósito", "Caja", "Monto", "Acumulado", "Usuario", "Observaciones"]
-        anchos = [70, 100, 90, 100, 90, 80, 90, 130, 200]
-        
-        # Aquí es donde se genera el Treeview
+        columnas = ["Retiro #", "Transacción #", "Fecha", "Hora Depósito",
+                    "Caja", "Monto", "Acumulado", "Usuario", "Observaciones"]
+        anchos   = [70, 100, 90, 100, 90, 80, 90, 130, 200]
+
         frm_tree, self.tabla = make_treeview(frm_tabla, columnas, anchos, height=18)
         frm_tree.pack(fill="both", expand=True)
-        
-        # CORRECCIÓN PARA CENTRAR SIN ERRORES:
+
         for col_id in self.tabla["columns"]:
             self.tabla.column(col_id, anchor="center")
             self.tabla.heading(col_id, anchor="center")
+
+        # Eventos de selección / doble clic
+        self.tabla.bind("<<TreeviewSelect>>", self._on_seleccion)
+        self.tabla.bind("<ButtonRelease-1>", self._on_seleccion)
+        self.tabla.bind("<Double-1>", self._on_ver_detalle)
+
+    # ── Helpers ─────────────────────────────────────────────────────────────
 
     def _abrir_calendario(self):
         _CalendarioPopup(self.entry_fecha, self.filtro_fecha)
@@ -221,17 +256,20 @@ class RetirosView(tk.Frame):
 
     def _refresh_retiros(self):
         try:
-            for item in self.tabla.get_children(): self.tabla.delete(item)
+            for item in self.tabla.get_children():
+                self.tabla.delete(item)
+
             fecha_obj = datetime.strptime(self.filtro_fecha.get(), "%d/%m/%Y").date()
 
             if self.filtro_caja.get() == "Todas":
                 retiros = retiros_model.obtener_retiros_por_fecha(fecha_obj)
             else:
-                caja_sel = next((c for c in self.cajas_cache if c["nombre"] == self.filtro_caja.get()), None)
-                retiros = retiros_model.obtener_retiros_por_caja_y_fecha(caja_sel["id"], fecha_obj) if caja_sel else []
+                caja_sel = next((c for c in self.cajas_cache
+                                 if c["nombre"] == self.filtro_caja.get()), None)
+                retiros = (retiros_model.obtener_retiros_por_caja_y_fecha(caja_sel["id"], fecha_obj)
+                           if caja_sel else [])
 
             for r in retiros:
-                # Se insertan los valores respetando el orden de las columnas definido arriba
                 self.tabla.insert("", "end", iid=str(r["id"]), values=(
                     r.get("num_retiro", r["id"]),
                     r.get("num_transaccion", "N/A"),
@@ -240,11 +278,33 @@ class RetirosView(tk.Frame):
                     r.get("nombre_caja", "N/A"),
                     f"${r['monto']:,.2f}",
                     f"${r.get('acumulado', 0):,.2f}",
-                    r.get("nombre_usuario", "N/A"), # <--- DATO DEL USUARIO AGREGADO AQUÍ
+                    r.get("nombre_usuario", "N/A"),
                     r.get("observaciones", "")[:50]
                 ))
+
+            # Al refrescar no hay nada seleccionado
+            self._actualizar_botones_accion(hay_seleccion=False)
+
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar retiros: {e}")
+
+    def _retiro_seleccionado_id(self):
+        """Devuelve el id (int) del retiro seleccionado, o None."""
+        sel = self.tabla.selection()
+        return int(sel[0]) if sel else None
+
+    def _actualizar_botones_accion(self, hay_seleccion: bool):
+        estado = "normal" if hay_seleccion else "disabled"
+        self.btn_editar.config(state=estado)
+        self.btn_eliminar.config(state=estado)
+
+    # ── Eventos ─────────────────────────────────────────────────────────────
+
+    def _on_seleccion(self, event=None):
+        self._actualizar_botones_accion(hay_seleccion=bool(self.tabla.selection()))
+
+    def _on_filtrar(self):
+        self._refresh_retiros()
 
     def _on_nuevo_retiro(self):
         if not self.cajas_cache:
@@ -253,6 +313,7 @@ class RetirosView(tk.Frame):
 
         dialogo = _DialogoRetiro(self, self.cajas_cache)
         self.wait_window(dialogo)
+
         if dialogo.resultado:
             try:
                 retiros_model.insertar_retiro(
@@ -266,91 +327,198 @@ class RetirosView(tk.Frame):
             except Exception as e:
                 messagebox.showerror("Error", f"Error al guardar: {e}")
 
+    def _on_editar_retiro(self):
+        retiro_id = self._retiro_seleccionado_id()
+        if retiro_id is None:
+            return
+
+        retiro = retiros_model.obtener_retiro_por_id(retiro_id)
+        if not retiro:
+            messagebox.showerror("Error", "No se encontró el retiro.")
+            return
+
+        dialogo = _DialogoRetiro(self, self.cajas_cache, retiro_existente=retiro)
+        self.wait_window(dialogo)
+
+        if dialogo.resultado:
+            try:
+                retiros_model.actualizar_retiro(
+                    id_retiro=retiro_id,
+                    id_caja=dialogo.resultado['id_caja'],
+                    monto=dialogo.resultado['monto'],
+                    motivo=dialogo.resultado['motivo'],
+                    observaciones=dialogo.resultado['observaciones']
+                )
+                self._refresh_retiros()
+                messagebox.showinfo("Éxito", "Retiro actualizado correctamente.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al actualizar: {e}")
+
     def _on_eliminar_retiro(self):
-        sel = self.tabla.selection()
-        if not sel: return
-        if messagebox.askyesno("Confirmar", "¿Eliminar retiro?"):
-            retiros_model.eliminar_retiro(int(sel[0]))
-            self._refresh_retiros()
+        retiro_id = self._retiro_seleccionado_id()
+        if retiro_id is None:
+            return
 
-    def _on_filtrar(self):
-        self._refresh_retiros()
+        confirmar = messagebox.askyesno(
+            "Confirmar eliminación",
+            f"¿Está seguro que desea eliminar el retiro #{retiro_id}?\n"
+            "Esta acción no se puede deshacer."
+        )
+        if confirmar:
+            try:
+                retiros_model.eliminar_retiro(retiro_id)
+                self._refresh_retiros()
+                messagebox.showinfo("Éxito", "Retiro eliminado correctamente.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al eliminar: {e}")
 
-    def _on_ver_detalle(self, event):
-        sel = self.tabla.selection()
-        if not sel: return
-        retiro = retiros_model.obtener_retiro_por_id(int(sel[0]))
-        if retiro: _DialogoDetalleRetiro(self, retiro)
+    def _on_ver_detalle(self, event=None):
+        retiro_id = self._retiro_seleccionado_id()
+        if retiro_id is None:
+            return
+        retiro = retiros_model.obtener_retiro_por_id(retiro_id)
+        if retiro:
+            _DialogoDetalleRetiro(self, retiro)
 
-# ... (Clases _DialogoRetiro y _DialogoDetalleRetiro sin cambios adicionales) ...
 
-
-# ── Diálogos (Nuevo y Detalle) ───────────────────────────────────────────────
+# ── Diálogos ────────────────────────────────────────────────────────────────
 
 class _DialogoRetiro(tk.Toplevel):
-    def __init__(self, parent, cajas):
+    """
+    Diálogo reutilizable para crear y editar retiros.
+    Si se pasa `retiro_existente`, precarga sus datos y actúa como editor.
+    """
+    def __init__(self, parent, cajas, retiro_existente=None):
         super().__init__(parent)
         self.cajas = cajas
+        self.retiro_existente = retiro_existente
         self.resultado = None
-        self.title("Nuevo Retiro")
-        self.configure(bg=C_WHITE)
-        self.grab_set()
-        self._build()
 
-    def _build(self):
-        frm = tk.Frame(self, bg=C_WHITE, padx=20, pady=20)
+        es_edicion = retiro_existente is not None
+        self.title("Editar Retiro" if es_edicion else "Nuevo Retiro")
+        self.configure(bg=C_WHITE)
+        self.resizable(False, False)
+        self.grab_set()
+        self._build(es_edicion)
+
+    def _build(self, es_edicion: bool):
+        frm = tk.Frame(self, bg=C_WHITE, padx=24, pady=20)
         frm.pack()
 
-        tk.Label(frm, text="Caja:", bg=C_WHITE).grid(row=0, column=0, sticky="w")
+        # Título del diálogo
+        titulo = "Editar Retiro" if es_edicion else "Nuevo Retiro"
+        tk.Label(frm, text=titulo, bg=C_WHITE, fg=C_TEXT,
+                 font=("Arial", 13, "bold")).grid(row=0, column=0, columnspan=2,
+                                                  sticky="w", pady=(0, 14))
+
+        # Caja
+        tk.Label(frm, text="Caja:", bg=C_WHITE, fg=C_TEXT,
+                 font=("Arial", 10)).grid(row=1, column=0, sticky="w")
         self.var_caja = tk.StringVar()
-        self.combo = ttk.Combobox(frm, textvariable=self.var_caja, values=[c["nombre"] for c in self.cajas], state="readonly")
-        self.combo.grid(row=1, column=0, pady=(0, 10))
+        self.combo = ttk.Combobox(frm, textvariable=self.var_caja,
+                                  values=[c["nombre"] for c in self.cajas],
+                                  state="readonly", width=28)
+        self.combo.grid(row=2, column=0, columnspan=2, pady=(2, 10), sticky="ew")
 
-        tk.Label(frm, text="Monto:", bg=C_WHITE).grid(row=2, column=0, sticky="w")
+        # Monto
+        tk.Label(frm, text="Monto ($):", bg=C_WHITE, fg=C_TEXT,
+                 font=("Arial", 10)).grid(row=3, column=0, sticky="w")
         self.var_monto = tk.StringVar()
-        tk.Entry(frm, textvariable=self.var_monto, relief="solid").grid(row=3, column=0, pady=(0, 10), sticky="ew")
+        tk.Entry(frm, textvariable=self.var_monto, relief="solid", bd=1,
+                 width=30).grid(row=4, column=0, columnspan=2, pady=(2, 10), sticky="ew", ipady=4)
 
-        tk.Label(frm, text="Observaciones:", bg=C_WHITE).grid(row=4, column=0, sticky="w")
-        self.txt_obs = tk.Text(frm, height=4, width=30, relief="solid")
-        self.txt_obs.grid(row=5, column=0, pady=(0, 15))
+        # Observaciones
+        tk.Label(frm, text="Observaciones:", bg=C_WHITE, fg=C_TEXT,
+                 font=("Arial", 10)).grid(row=5, column=0, sticky="w")
+        self.txt_obs = tk.Text(frm, height=4, width=32, relief="solid", bd=1)
+        self.txt_obs.grid(row=6, column=0, columnspan=2, pady=(2, 16))
 
+        # Precargar datos si es edición
+        if es_edicion:
+            r = self.retiro_existente
+            caja_nombre = r.get("nombre_caja", "")
+            if caja_nombre in [c["nombre"] for c in self.cajas]:
+                self.var_caja.set(caja_nombre)
+            self.var_monto.set(str(r.get("monto", "")))
+            self.txt_obs.insert("1.0", r.get("observaciones", ""))
+
+        # Botones
         btn_frm = tk.Frame(frm, bg=C_WHITE)
-        btn_frm.grid(row=6, column=0)
-        tk.Button(btn_frm, text="Guardar", command=self._guardar, bg=C_ACCENT, fg=C_WHITE).pack(side="right")
-        tk.Button(btn_frm, text="Cancelar", command=self.destroy).pack(side="right", padx=10)
+        btn_frm.grid(row=7, column=0, columnspan=2, sticky="e")
+
+        tk.Button(btn_frm, text="Cancelar", command=self.destroy,
+                  bg=C_BG, fg=C_TEXT, relief="flat", cursor="hand2",
+                  font=("Arial", 10), padx=10, pady=5).pack(side="right", padx=(8, 0))
+
+        color_guardar = C_ACCENT
+        tk.Button(btn_frm, text="Guardar cambios" if es_edicion else "Guardar",
+                  command=self._guardar,
+                  bg=color_guardar, fg=C_WHITE, relief="flat", cursor="hand2",
+                  font=("Arial", 10, "bold"), padx=10, pady=5).pack(side="right")
 
     def _guardar(self):
         try:
-            monto = float(self.var_monto.get())
+            monto_txt = self.var_monto.get().strip().replace(",", ".")
+            if not monto_txt:
+                messagebox.showwarning("Campo requerido", "Ingrese un monto.", parent=self)
+                return
+            monto = float(monto_txt)
+            if monto <= 0:
+                messagebox.showwarning("Monto inválido", "El monto debe ser mayor a cero.", parent=self)
+                return
+            if not self.var_caja.get():
+                messagebox.showwarning("Campo requerido", "Seleccione una caja.", parent=self)
+                return
+
             caja_sel = next(c for c in self.cajas if c["nombre"] == self.var_caja.get())
             self.resultado = {
                 'id_caja': caja_sel["id"],
                 'monto': monto,
                 'motivo': "Retiro de efectivo",
-                'observaciones': self.txt_obs.get("1.0", "end-1c")
+                'observaciones': self.txt_obs.get("1.0", "end-1c").strip()
             }
             self.destroy()
-        except: messagebox.showerror("Error", "Datos inválidos")
+        except ValueError:
+            messagebox.showerror("Error", "El monto debe ser un número válido.", parent=self)
+        except StopIteration:
+            messagebox.showerror("Error", "Caja no encontrada.", parent=self)
+
 
 class _DialogoDetalleRetiro(tk.Toplevel):
     def __init__(self, parent, retiro):
         super().__init__(parent)
-        self.title(f"Detalle #{retiro['id']}")
+        self.title(f"Detalle — Retiro #{retiro['id']}")
         self.configure(bg=C_WHITE)
-        frm = tk.Frame(self, bg=C_WHITE, padx=20, pady=20)
+        self.resizable(False, False)
+        self.grab_set()
+
+        frm = tk.Frame(self, bg=C_WHITE, padx=24, pady=20)
         frm.pack()
-        
+
+        tk.Label(frm, text=f"Retiro #{retiro['id']}", bg=C_WHITE, fg=C_TEXT,
+                 font=("Arial", 13, "bold")).grid(row=0, column=0, columnspan=2,
+                                                  sticky="w", pady=(0, 14))
+
         campos = [
-            ("Retiro #", retiro.get('id')),
-            ("Transacción #", retiro.get('num_transaccion', 'N/A')),
-            ("Hora Depósito", retiro.get('hora_deposito', 'N/A')),
-            ("Monto", f"${retiro['monto']:,.2f}"),
-            ("Acumulado", f"${retiro.get('acumulado', 0):,.2f}"),
-            ("Observaciones", retiro.get('observaciones', ''))
+            ("Transacción #",  retiro.get("num_transaccion", "N/A")),
+            ("Caja",           retiro.get("nombre_caja", "N/A")),
+            ("Fecha",          retiro.get("fecha_solo", "N/A")),
+            ("Hora Depósito",  retiro.get("hora_deposito", "N/A")),
+            ("Monto",          f"${retiro['monto']:,.2f}"),
+            ("Acumulado",      f"${retiro.get('acumulado', 0):,.2f}"),
+            ("Usuario",        retiro.get("nombre_usuario", "N/A")),
+            ("Observaciones",  retiro.get("observaciones", "") or "—"),
         ]
 
-        for i, (k, v) in enumerate(campos):
-            tk.Label(frm, text=f"{k}:", font=("Arial", 9, "bold"), bg=C_WHITE).grid(row=i, column=0, sticky="w")
-            tk.Label(frm, text=v, bg=C_WHITE).grid(row=i, column=1, sticky="w", padx=10)
+        for i, (k, v) in enumerate(campos, start=1):
+            tk.Label(frm, text=f"{k}:", font=("Arial", 9, "bold"),
+                     bg=C_WHITE, fg=C_TEXT, anchor="e").grid(
+                row=i, column=0, sticky="e", pady=3, padx=(0, 8))
+            tk.Label(frm, text=v, bg=C_WHITE, fg=C_TEXT, anchor="w",
+                     wraplength=260, justify="left").grid(
+                row=i, column=1, sticky="w", pady=3)
 
-        tk.Button(frm, text="Cerrar", command=self.destroy).grid(row=len(campos), column=0, columnspan=2, pady=10)
+        tk.Button(frm, text="Cerrar", command=self.destroy,
+                  bg=C_ACCENT, fg=C_WHITE, relief="flat", cursor="hand2",
+                  font=("Arial", 10, "bold"), padx=12, pady=5).grid(
+            row=len(campos) + 1, column=0, columnspan=2, pady=(16, 0))
