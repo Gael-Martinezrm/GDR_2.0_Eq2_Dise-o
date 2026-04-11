@@ -1,7 +1,7 @@
 """
 app/modules/cajas/view.py
 
-Interfaz gráfica del módulo de cajas.
+Interfaz gráfica del módulo de cajas con campos de descripción actualizados.
 """
 
 import tkinter as tk
@@ -53,7 +53,8 @@ class CajasView(tk.Frame):
         frm_tabla = tk.Frame(self, bg=C_BG, padx=16, pady=4)
         frm_tabla.pack(fill="both", expand=True)
 
-        columnas = ["ID", "Nombre", "N° Caja", "Ubicación", "Estado"]
+        # Se cambió el encabezado de la columna a "Descripción"
+        columnas = ["ID", "Nombre", "N° Caja", "Descripción", "Estado"]
         anchos   = [50, 180, 90, 200, 90]
         frm_tree, self.tabla = make_treeview(frm_tabla, columnas, anchos)
         frm_tree.pack(fill="both", expand=True)
@@ -64,9 +65,10 @@ class CajasView(tk.Frame):
         dialogo = _DialogoCaja(self)
         self.wait_window(dialogo)
         if dialogo.resultado:
-            nombre, numero, ubicacion = dialogo.resultado
+            nombre, numero, descripcion = dialogo.resultado
             try:
-                cajas_model.insertar_caja(nombre, numero, ubicacion)
+                # Se envía descripcion al parámetro de ubicación del modelo
+                cajas_model.insertar_caja(nombre, numero, descripcion)
                 messagebox.showinfo("Éxito", f"Caja '{nombre}' creada.", parent=self)
                 self._refresh_cajas()
             except Exception as e:
@@ -81,9 +83,9 @@ class CajasView(tk.Frame):
         dialogo = _DialogoCaja(self, caja=caja)
         self.wait_window(dialogo)
         if dialogo.resultado:
-            nombre, numero, ubicacion = dialogo.resultado
+            nombre, numero, descripcion = dialogo.resultado
             try:
-                cajas_model.actualizar_caja(caja["id"], nombre, numero, ubicacion)
+                cajas_model.actualizar_caja(caja["id"], nombre, numero, descripcion)
                 messagebox.showinfo("Éxito", "Caja actualizada.", parent=self)
                 self._refresh_cajas()
             except Exception as e:
@@ -152,7 +154,7 @@ class _DialogoCaja(tk.Toplevel):
         self.resizable(False, False)
         self.configure(bg=C_WHITE)
         self.grab_set()
-        self._centrar(380, 240)
+        self._centrar(380, 260)
         self._build(caja)
 
     def _build(self, caja):
@@ -180,13 +182,13 @@ class _DialogoCaja(tk.Toplevel):
                  relief="solid", bd=1, width=10).grid(
                      row=2, column=1, sticky="ew", ipady=5, pady=(3, 12))
 
-        # Ubicación
-        tk.Label(frm, text="Ubicación", bg=C_WHITE, fg=C_TEXT,
+        # Descripción (Antes Ubicación)
+        tk.Label(frm, text="Descripción", bg=C_WHITE, fg=C_TEXT,
                  font=("Arial", 10)).grid(
                      row=3, column=0, columnspan=2, sticky="w")
-        self.var_ubicacion = tk.StringVar(
+        self.var_descripcion = tk.StringVar(
             value=caja.get("ubicacion", "") if caja else "")
-        tk.Entry(frm, textvariable=self.var_ubicacion, font=("Arial", 11),
+        tk.Entry(frm, textvariable=self.var_descripcion, font=("Arial", 11),
                  relief="solid", bd=1).grid(
                      row=4, column=0, columnspan=2, sticky="ew",
                      ipady=5, pady=(3, 18))
@@ -196,7 +198,7 @@ class _DialogoCaja(tk.Toplevel):
 
         # Botones
         frm_btns = tk.Frame(frm, bg=C_WHITE)
-        frm_btns.grid(row=5, column=0, columnspan=2, sticky="e")
+        frm_btns.grid(row=5, column=0, columnspan=2, sticky="e", pady=(0, 16))
 
         tk.Button(frm_btns, text="Cancelar", command=self.destroy,
                   bg="#ECEFF1", fg=C_TEXT, relief="flat", cursor="hand2",
@@ -211,14 +213,14 @@ class _DialogoCaja(tk.Toplevel):
         self.bind("<Escape>", lambda e: self.destroy())
 
     def _guardar(self):
-        nombre    = self.var_nombre.get().strip()
-        numero    = self.var_numero.get().strip()
-        ubicacion = self.var_ubicacion.get().strip()
+        nombre      = self.var_nombre.get().strip()
+        numero      = self.var_numero.get().strip()
+        descripcion = self.var_descripcion.get().strip()
         if not nombre or not numero:
             messagebox.showerror("Error", "Nombre y N° de caja son obligatorios.",
-                                 parent=self)
+                                  parent=self)
             return
-        self.resultado = (nombre, numero, ubicacion)
+        self.resultado = (nombre, numero, descripcion)
         self.destroy()
 
     def _centrar(self, ancho, alto):

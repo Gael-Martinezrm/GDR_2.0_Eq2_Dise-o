@@ -10,121 +10,161 @@ from datetime import datetime, timedelta
 
 
 def total_diario(fecha=None):
-    """
-    Calcula el total de retiros para un día específico.
-
-    Args:
-        fecha (datetime.date): Fecha a consultar. Si None, usa hoy.
-
-    Returns:
-        float: Monto total de retiros en el día.
-    """
-    pass
+    if fecha is None:
+        fecha = datetime.now().date()
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(monto), 0) AS total FROM retiros WHERE DATE(fecha_retiro) = ?",
+            (fecha.strftime("%Y-%m-%d"),)
+        ).fetchone()
+        return float(row["total"])
+    finally:
+        conn.close()
 
 
 def total_semanal(fecha_fin=None):
-    """
-    Calcula el total de retiros de la semana.
-
-    Args:
-        fecha_fin (datetime.date): Última fecha de la semana. Si None, usa hoy.
-
-    Returns:
-        float: Monto total de retiros en la semana.
-    """
-    pass
+    if fecha_fin is None:
+        fecha_fin = datetime.now().date()
+    fecha_inicio = fecha_fin - timedelta(days=6)
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            """SELECT COALESCE(SUM(monto), 0) AS total
+               FROM retiros WHERE DATE(fecha_retiro) BETWEEN ? AND ?""",
+            (fecha_inicio.strftime("%Y-%m-%d"), fecha_fin.strftime("%Y-%m-%d"))
+        ).fetchone()
+        return float(row["total"])
+    finally:
+        conn.close()
 
 
 def total_mensual(fecha=None):
-    """
-    Calcula el total de retiros del mes.
-
-    Args:
-        fecha (datetime.date): Fecha dentro del mes. Si None, usa hoy.
-
-    Returns:
-        float: Monto total de retiros en el mes.
-    """
-    pass
+    if fecha is None:
+        fecha = datetime.now().date()
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            """SELECT COALESCE(SUM(monto), 0) AS total
+               FROM retiros WHERE strftime('%Y-%m', fecha_retiro) = ?""",
+            (fecha.strftime("%Y-%m"),)
+        ).fetchone()
+        return float(row["total"])
+    finally:
+        conn.close()
 
 
 def total_por_caja_diario(fecha=None):
-    """
-    Calcula el total de retiros por caja para un día.
-
-    Args:
-        fecha (datetime.date): Fecha a consultar. Si None, usa hoy.
-
-    Returns:
-        list: Lista de diccionarios con (nombre_caja, total).
-    """
-    pass
+    if fecha is None:
+        fecha = datetime.now().date()
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT c.nombre AS nombre_caja,
+                      COALESCE(SUM(r.monto), 0) AS total
+               FROM cajas c
+               LEFT JOIN retiros r ON r.id_caja = c.id
+                     AND DATE(r.fecha_retiro) = ?
+               GROUP BY c.id, c.nombre ORDER BY c.numero_caja""",
+            (fecha.strftime("%Y-%m-%d"),)
+        ).fetchall()
+        return [{"nombre_caja": row["nombre_caja"], "total": float(row["total"])} for row in rows]
+    finally:
+        conn.close()
 
 
 def total_por_caja_semanal(fecha_fin=None):
-    """
-    Calcula el total de retiros por caja para la semana.
-
-    Args:
-        fecha_fin (datetime.date): Última fecha de la semana. Si None, usa hoy.
-
-    Returns:
-        list: Lista de diccionarios con (nombre_caja, total).
-    """
-    pass
+    if fecha_fin is None:
+        fecha_fin = datetime.now().date()
+    fecha_inicio = fecha_fin - timedelta(days=6)
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT c.nombre AS nombre_caja,
+                      COALESCE(SUM(r.monto), 0) AS total
+               FROM cajas c
+               LEFT JOIN retiros r ON r.id_caja = c.id
+                     AND DATE(r.fecha_retiro) BETWEEN ? AND ?
+               GROUP BY c.id, c.nombre ORDER BY c.numero_caja""",
+            (fecha_inicio.strftime("%Y-%m-%d"), fecha_fin.strftime("%Y-%m-%d"))
+        ).fetchall()
+        return [{"nombre_caja": row["nombre_caja"], "total": float(row["total"])} for row in rows]
+    finally:
+        conn.close()
 
 
 def total_por_caja_mensual(fecha=None):
-    """
-    Calcula el total de retiros por caja para el mes.
-
-    Args:
-        fecha (datetime.date): Fecha dentro del mes. Si None, usa hoy.
-
-    Returns:
-        list: Lista de diccionarios con (nombre_caja, total).
-    """
-    pass
+    if fecha is None:
+        fecha = datetime.now().date()
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT c.nombre AS nombre_caja,
+                      COALESCE(SUM(r.monto), 0) AS total
+               FROM cajas c
+               LEFT JOIN retiros r ON r.id_caja = c.id
+                     AND strftime('%Y-%m', r.fecha_retiro) = ?
+               GROUP BY c.id, c.nombre ORDER BY c.numero_caja""",
+            (fecha.strftime("%Y-%m"),)
+        ).fetchall()
+        return [{"nombre_caja": row["nombre_caja"], "total": float(row["total"])} for row in rows]
+    finally:
+        conn.close()
 
 
 def retiros_por_periodo(fecha_inicio, fecha_fin):
     """
     Obtiene detalle de todos los retiros en un período.
 
-    Args:
-        fecha_inicio (datetime.date): Fecha inicial.
-        fecha_fin (datetime.date): Fecha final (inclusive).
-
     Returns:
-        list: Lista de retiros completos con detalles.
+        list[dict]: claves → numero_transaccion, importe, nombre_caja, usuario, fecha
     """
-    pass
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT r.id           AS numero_transaccion,
+                      r.monto        AS importe,
+                      c.nombre       AS nombre_caja,
+                      u.usuario      AS usuario,
+                      strftime('%Y-%m-%d', r.fecha_retiro) AS fecha
+               FROM retiros  r
+               JOIN cajas    c ON c.id = r.id_caja
+               JOIN usuarios u ON u.id = r.id_usuario
+               WHERE DATE(r.fecha_retiro) BETWEEN ? AND ?
+               ORDER BY r.fecha_retiro""",
+            (fecha_inicio.strftime("%Y-%m-%d"), fecha_fin.strftime("%Y-%m-%d"))
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
 
 
 def cantidad_retiros_diarios(fecha=None):
-    """
-    Cuenta la cantidad de retiros en un día.
-
-    Args:
-        fecha (datetime.date): Fecha a consultar. Si None, usa hoy.
-
-    Returns:
-        int: Número de retiros en el día.
-    """
-    pass
+    if fecha is None:
+        fecha = datetime.now().date()
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM retiros WHERE DATE(fecha_retiro) = ?",
+            (fecha.strftime("%Y-%m-%d"),)
+        ).fetchone()
+        return int(row["cnt"])
+    finally:
+        conn.close()
 
 
 def promedio_retiros_diarios(fecha=None):
-    """
-    Calcula el monto promedio de retiros en un día.
-
-    Args:
-        fecha (datetime.date): Fecha a consultar. Si None, usa hoy.
-
-    Returns:
-        float: Promedio de retiros en el día.
-    """
-    pass
+    if fecha is None:
+        fecha = datetime.now().date()
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT COALESCE(AVG(monto), 0) AS promedio FROM retiros WHERE DATE(fecha_retiro) = ?",
+            (fecha.strftime("%Y-%m-%d"),)
+        ).fetchone()
+        return float(row["promedio"])
+    finally:
+        conn.close()
 
 
 def registrar_reporte_generado(tipo_reporte, periodo, fecha_inicio, fecha_fin,
@@ -132,17 +172,28 @@ def registrar_reporte_generado(tipo_reporte, periodo, fecha_inicio, fecha_fin,
     """
     Registra un reporte generado en la BD.
 
-    Args:
-        tipo_reporte (str): Tipo de reporte (diario, semanal, mensual).
-        periodo (str): Descripción del período.
-        fecha_inicio (datetime.date): Fecha de inicio del período.
-        fecha_fin (datetime.date): Fecha de fin del período.
-        total_retiros (float): Monto total en el período.
-        cantidad_retiros (int): Cantidad de retiros.
-        ruta_archivo (str): Ruta donde se guardó el archivo.
-        formato (str): Formato del archivo (PDF, Excel).
-
     Returns:
         int: ID del reporte registrado.
     """
-    pass
+    conn = get_conn()
+    try:
+        cursor = conn.execute(
+            """INSERT INTO reportes_generados
+                   (tipo_reporte, periodo, fecha_inicio, fecha_fin,
+                    total_retiros, cantidad_retiros, ruta_archivo, formato)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                tipo_reporte,
+                periodo,
+                fecha_inicio.strftime("%Y-%m-%d"),
+                fecha_fin.strftime("%Y-%m-%d"),
+                total_retiros,
+                cantidad_retiros,
+                ruta_archivo,
+                formato,
+            )
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()

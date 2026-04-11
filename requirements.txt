@@ -1,2 +1,13 @@
+# Sistema de Retiros GDR 2.0 — Dependencias
+# Python 3.13+  (tkinter incluido en la instalacion estandar)
+# sqlite3       (modulo stdlib, no requiere instalacion)
+ 
+# Exportacion a Excel
+openpyxl>=3.1.5
+ 
+# Exportacion a PDF
 reportlab>=4.0
-openpyxl>=3.1
+ 
+# Para compilar a .exe (solo en desarrollo/build)
+# pyinstaller>=6.0
+ 
