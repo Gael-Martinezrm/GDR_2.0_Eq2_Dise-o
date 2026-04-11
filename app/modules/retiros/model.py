@@ -70,6 +70,7 @@ def obtener_retiro_por_id(id_retiro):
                 r.*,
                 'TRX-' || r.id as num_transaccion,
                 STRFTIME('%H:%M:%S', r.fecha_retiro) as hora_deposito,
+                STRFTIME('%d/%m/%Y', r.fecha_retiro) as fecha_solo,
                 c.nombre as nombre_caja,
                 u.nombre as nombre_usuario
             FROM retiros r
@@ -93,15 +94,43 @@ def insertar_retiro(id_usuario, id_caja, monto, motivo="", observaciones=""):
             (id_usuario, id_caja, monto, motivo, fecha_retiro, observaciones) 
             VALUES (?, ?, ?, ?, ?, ?)
         """, (
-            id_usuario, 
-            id_caja, 
-            monto, 
-            motivo.strip() if motivo else "Retiro de efectivo", 
+            id_usuario,
+            id_caja,
+            monto,
+            motivo.strip() if motivo else "Retiro de efectivo",
             datetime.now(),
             observaciones.strip() if observaciones else ""
         ))
         conn.commit()
         return cursor.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def actualizar_retiro(id_retiro, id_caja, monto, motivo="", observaciones=""):
+    """ Actualiza los datos editables de un retiro existente. """
+    conn = get_conn()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE retiros
+            SET id_caja       = ?,
+                monto         = ?,
+                motivo        = ?,
+                observaciones = ?
+            WHERE id = ?
+        """, (
+            id_caja,
+            monto,
+            motivo.strip() if motivo else "Retiro de efectivo",
+            observaciones.strip() if observaciones else "",
+            id_retiro
+        ))
+        conn.commit()
+        return cursor.rowcount > 0
     except Exception:
         conn.rollback()
         raise
