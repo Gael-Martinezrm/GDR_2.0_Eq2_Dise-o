@@ -40,7 +40,7 @@ class LoginWindow(tk.Tk):
         - Iconos y estilos
         """
         super().__init__()
-        self.title("Sistema de Retiros - Login")
+        self.title("Sistema de Retiros - OfficeMax")
         self.geometry("420x480")
         self.resizable(False, False)
         self.configure(bg=C_BG)
@@ -64,7 +64,7 @@ class LoginWindow(tk.Tk):
         frm_header = tk.Frame(self, bg=C_SIDEBAR, pady=28)
         frm_header.pack(fill="x")
 
-        tk.Label(frm_header, text="Sistema de Retiros",
+        tk.Label(frm_header, text="Sistema de Retiros \n OfficeMax",
                  bg=C_SIDEBAR, fg=C_WHITE,
                  font=("Arial", 20, "bold")).pack()
         tk.Label(frm_header, text="Login",

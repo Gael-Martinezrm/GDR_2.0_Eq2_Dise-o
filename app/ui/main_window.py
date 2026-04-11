@@ -48,7 +48,7 @@ class MainWindow(tk.Tk):
         self._active_btn = None          # Botón actualmente seleccionado
         self._active_indicator = None    # Barra indicadora lateral
 
-        self.title("Sistema de Retiros")
+        self.title("Sistema de Retiros - OfficeMax")
         self.geometry("1200x800")  # tamaño mínimo de referencia
         self.state("zoomed")       # maximiza al iniciar
         self.configure(bg=C_BG)
@@ -65,7 +65,7 @@ class MainWindow(tk.Tk):
         self.sidebar.pack_propagate(False)
 
         # Logo / título en sidebar
-        tk.Label(self.sidebar, text="Sistema de Retiros",
+        tk.Label(self.sidebar, text="OfficeMax",
                  bg=C_SIDEBAR, fg=C_WHITE,
                  font=("Arial", 16, "bold"), pady=20).pack(fill="x")
         tk.Frame(self.sidebar, bg="#1976D2", height=1).pack(fill="x", padx=12)

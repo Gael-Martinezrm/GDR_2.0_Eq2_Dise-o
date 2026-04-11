@@ -1,6 +1,6 @@
-# Sistema de Retiros - GDR 2.0
+# Sistema de Retiros - OfficeMax
 
-Sistema de control de retiros de efectivo para empresas con múltiples cajas físicas.
+Sistema de control de retiros de efectivo para OfficeMax.
 
 ## Descripción
 
@@ -76,7 +76,6 @@ GDR_2.0_Eq2_Dise-o/
 │   │   │
 │   │   ├── reportes/               # Generación y exportación de reportes
 │   │   │   ├── __init__.py
-│   │   │   ├── export_pdf.py       # Exportación a PDF (reportlab)
 │   │   │   ├── model.py            # Consultas y lógica de reportes
 │   │   │   └── view.py             # Pantalla de reportes
 │   │   │
@@ -103,15 +102,13 @@ GDR_2.0_Eq2_Dise-o/
 ├── data/                           # Almacenamiento en tiempo de ejecución
 │   └── retiros.db                  # Base de datos SQLite (generada al iniciar)
 │
-├── tests/                          # Pruebas unitarias
-│   ├── __init__.py
-│   ├── test_cajas.py
-│   ├── test_calculos.py
-│   ├── test_reportes.py
-│   ├── test_retiros.py
-│   └── test_usuarios.py
-│
-
+└── tests/                          # Pruebas unitarias
+    ├── __init__.py
+    ├── test_cajas.py
+    ├── test_calculos.py
+    ├── test_reportes.py
+    ├── test_retiros.py
+    └── test_usuarios.py
 ```
 
 > **Nota:** Los directorios `build/` y `dist/` son generados automáticamente por PyInstaller al compilar el ejecutable con `compilar.bat`. No forman parte del código fuente.
@@ -130,13 +127,6 @@ Todos los módulos centralizan la conexión a SQLite a través de `app/db/connec
 - **Contraseña**: admin123
 - **Rol**: Administrador
 
-- **Usuario**: gerente
-- **Contraseña**: gerente123
-- **Rol**: Gerente
-
-- **Usuario**: operador
-- **Contraseña**: operador123
-- **Rol**: Operador
 
 ## Compilar a Ejecutable
 
@@ -147,8 +137,3 @@ compilar.bat
 ```
 
 El ejecutable resultante se encontrará en `dist/SistemaRetiros/SistemaRetiros.exe`.
-
-
-## Autor
-
-Equipo 2 - GDR 2.0
