@@ -6,7 +6,7 @@
 title Compilando Sistema de Retiros...
 echo.
 echo  =========================================
-echo   GDR 2.0 — Sistema de Retiros
+echo   Sistema de Retiros
 echo   Empaquetador automatico con PyInstaller
 echo  =========================================
 echo.
@@ -26,7 +26,7 @@ python --version
 :: 2) Instalar/actualizar dependencias
 echo.
 echo  [1/4] Instalando dependencias...
-pip install reportlab openpyxl pyinstaller --quiet --upgrade
+pip install reportlab openpyxl pyinstaller --quiet --no-index --find-links packages\
 if errorlevel 1 (
     echo  [ERROR] Fallo la instalacion de dependencias.
     pause
