@@ -2,7 +2,7 @@
 app/db/seed.py
 
 Carga de datos iniciales en la base de datos.
-Inserta usuario admin y cajas iniciales si no existen.
+Inserta usuarios iniciales (admin, operador, gerente) y cajas si no existen.
 """
 
 from app.db.connection import get_conn
@@ -15,25 +15,34 @@ def seed():
 
     Crea:
     - Usuario administrador por defecto (admin/admin123)
+    - Usuario operador por defecto (operador/operador123)
+    - Usuario gerente por defecto (gerente/gerente123)
     - 3 cajas iniciales (Caja 1, Caja 2, Caja 3)
 
-    Solo inserta si los registros no existen.
+    Solo inserta si los registros no existen. Pueden eliminarse después.
     """
     conn = get_conn()
     cursor = conn.cursor()
 
     try:
-        # Verificar e insertar usuario admin si no existe
-        cursor.execute("SELECT id FROM usuarios WHERE usuario = ?", ("admin",))
-        if cursor.fetchone() is None:
-            password_hash = hash_password("admin123")
-            cursor.execute(
-                """
-                INSERT INTO usuarios (nombre, usuario, password_hash, rol, activo)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                ("Administrador", "admin", password_hash, "administrador", 1)
-            )
+        # Usuarios iniciales: (nombre_completo, usuario, password, rol)
+        usuarios_iniciales = [
+            ("Administrador", "admin",    "admin123",    "administrador"),
+            ("Operador",      "operador", "operador123", "operador"),
+            ("Gerente",       "gerente",  "gerente123",  "gerente"),
+        ]
+
+        for nombre, usuario, password, rol in usuarios_iniciales:
+            cursor.execute("SELECT id FROM usuarios WHERE usuario = ?", (usuario,))
+            if cursor.fetchone() is None:
+                password_hash = hash_password(password)
+                cursor.execute(
+                    """
+                    INSERT INTO usuarios (nombre, usuario, password_hash, rol, activo)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (nombre, usuario, password_hash, rol, 1)
+                )
 
         # Verificar e insertar cajas iniciales
         cajas_iniciales = [

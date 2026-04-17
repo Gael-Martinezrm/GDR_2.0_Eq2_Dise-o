@@ -1,0 +1,1 @@
+pip download reportlab openpyxl pyinstaller -d packages\

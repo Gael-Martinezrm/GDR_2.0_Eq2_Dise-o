@@ -48,6 +48,7 @@ GDR_2.0_Eq2_Dise-o/
 ├── main.py                         # Punto de entrada: inicializa DB y lanza login
 ├── requirements.txt                # Dependencias del proyecto (openpyxl, reportlab)
 ├── compilar.bat                    # Script para generar el ejecutable con PyInstaller
+├── dependencias.bat                # Script para instalar dependencias offline
 ├── GDR_Sistema_Retiros.spec        # Configuración de PyInstaller
 │
 ├── app/                            # Paquete principal de la aplicación
@@ -102,6 +103,22 @@ GDR_2.0_Eq2_Dise-o/
 ├── data/                           # Almacenamiento en tiempo de ejecución
 │   └── retiros.db                  # Base de datos SQLite (generada al iniciar)
 │
+├── packages/                       # Paquetes offline para instalación sin internet
+│   ├── altgraph-0.17.5-py2.py3-none-any.whl
+│   ├── charset_normalizer-3.4.7-cp312-cp312-win_amd64.whl
+│   ├── et_xmlfile-2.0.0-py3-none-any.whl
+│   ├── openpyxl-3.1.5-py2.py3-none-any.whl
+│   ├── packaging-26.1-py3-none-any.whl
+│   ├── pefile-2024.8.26-py3-none-any.whl
+│   ├── pillow-12.2.0-cp312-cp312-win_amd64.whl
+│   ├── pyinstaller-6.19.0-py3-none-win_amd64.whl
+│   ├── pyinstaller_hooks_contrib-2026.4-py3-none-any.whl
+│   ├── pywin32_ctypes-0.2.3-py3-none-any.whl
+│   ├── reportlab-4.4.10-py3-none-any.whl
+│   └── setuptools-82.0.1-py3-none-any.whl
+│
+├── python-3.14.4-amd64.exe         # Instalador de Python (distribución offline)
+│
 └── tests/                          # Pruebas unitarias
     ├── __init__.py
     ├── test_cajas.py
@@ -123,9 +140,11 @@ Todos los módulos centralizan la conexión a SQLite a través de `app/db/connec
 
 ## Usuarios por Defecto
 
-- **Usuario**: admin
-- **Contraseña**: admin123
-- **Rol**: Administrador
+| Usuario  | Contraseña   | Rol           |
+|----------|--------------|---------------|
+| admin    | admin123     | Administrador |
+| gerente  | gerente123   | Gerente       |
+| operador | operador123  | Operador      |
 
 
 ## Compilar a Ejecutable
