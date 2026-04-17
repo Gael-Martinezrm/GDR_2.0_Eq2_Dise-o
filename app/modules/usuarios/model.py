@@ -6,9 +6,9 @@ def obtener_usuarios(solo_activos=True):
     cursor = conn.cursor()
     try:
         if solo_activos:
-            cursor.execute("SELECT id, nombre, usuario, rol, activo, fecha_creacion FROM usuarios WHERE activo = 1 ORDER BY nombre ASC")
+            cursor.execute("SELECT id, nombre, usuario, rol, activo, fecha_creacion FROM usuarios WHERE activo = 1 ORDER BY id ASC")
         else:
-            cursor.execute("SELECT id, nombre, usuario, rol, activo, fecha_creacion FROM usuarios ORDER BY nombre ASC")
+            cursor.execute("SELECT id, nombre, usuario, rol, activo, fecha_creacion FROM usuarios ORDER BY id ASC")
         return [dict(row) for row in cursor.fetchall()]
     finally:
         conn.close()

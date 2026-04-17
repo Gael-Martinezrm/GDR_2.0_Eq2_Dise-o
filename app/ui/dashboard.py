@@ -189,9 +189,19 @@ class DashboardView(tk.Frame):
             if not distribucion:
                 tk.Label(self.frame_distribucion_contenido, text="Sin movimientos hoy", font=("Arial", 10, "italic"), bg=C_WHITE).pack(pady=10)
                 return
-            for caja in distribucion:
-                frm = tk.Frame(self.frame_distribucion_contenido, bg=C_WHITE)
-                frm.pack(fill=tk.X, pady=2)
-                tk.Label(frm, text=f"{caja['nombre']}:", font=("Arial", 10), bg=C_WHITE).pack(side="left")
-                tk.Label(frm, text=f"${caja['total']:,.2f}", font=("Arial", 10, "bold"), bg=C_WHITE, fg=C_ACCENT).pack(side="left", padx=5)
+
+            FILAS_POR_COLUMNA = 3
+            num_columnas = max(1, -(-len(distribucion) // FILAS_POR_COLUMNA))  # techo
+
+            for col_idx in range(num_columnas):
+                col_frame = tk.Frame(self.frame_distribucion_contenido, bg=C_WHITE)
+                col_frame.pack(side=tk.LEFT, anchor="n", padx=(0, 30))
+
+                inicio = col_idx * FILAS_POR_COLUMNA
+                fin = inicio + FILAS_POR_COLUMNA
+                for caja in distribucion[inicio:fin]:
+                    frm = tk.Frame(col_frame, bg=C_WHITE)
+                    frm.pack(fill=tk.X, pady=2)
+                    tk.Label(frm, text=f"{caja['nombre']}:", font=("Arial", 10), bg=C_WHITE).pack(side="left")
+                    tk.Label(frm, text=f"${caja['total']:,.2f}", font=("Arial", 10, "bold"), bg=C_WHITE, fg=C_ACCENT).pack(side="left", padx=5)
         except: pass

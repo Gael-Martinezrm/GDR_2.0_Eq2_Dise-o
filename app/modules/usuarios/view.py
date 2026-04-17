@@ -51,7 +51,7 @@ class UsuariosView(tk.Frame):
         frm_tabla.pack(fill="both", expand=True)
 
         columnas = ["ID", "Nombre", "Usuario", "Rol", "Estado"]
-        anchos   = [50, 200, 140, 120, 90]
+        anchos   = [50, 280, 140, 120, 90]
         frm_tree, self.tabla = make_treeview(frm_tabla, columnas, anchos)
         frm_tree.pack(fill="both", expand=True)
 

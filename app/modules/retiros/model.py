@@ -23,7 +23,7 @@ def obtener_retiros_por_fecha(fecha):
                 r.motivo,
                 r.observaciones,
                 c.nombre as nombre_caja,
-                u.nombre as nombre_usuario
+                u.usuario as nombre_usuario
             FROM retiros r
             JOIN cajas c ON r.id_caja = c.id
             JOIN usuarios u ON r.id_usuario = u.id
@@ -49,7 +49,7 @@ def obtener_retiros_por_caja_y_fecha(id_caja, fecha):
                 r.motivo,
                 r.observaciones,
                 r.fecha_retiro,
-                u.nombre as nombre_usuario
+                u.usuario as nombre_usuario
             FROM retiros r
             JOIN usuarios u ON r.id_usuario = u.id
             WHERE r.id_caja = ? AND DATE(r.fecha_retiro) = DATE(?)
@@ -72,7 +72,7 @@ def obtener_retiro_por_id(id_retiro):
                 STRFTIME('%H:%M:%S', r.fecha_retiro) as hora_deposito,
                 STRFTIME('%d/%m/%Y', r.fecha_retiro) as fecha_solo,
                 c.nombre as nombre_caja,
-                u.nombre as nombre_usuario
+                u.usuario as nombre_usuario
             FROM retiros r
             JOIN cajas c ON r.id_caja = c.id
             JOIN usuarios u ON r.id_usuario = u.id

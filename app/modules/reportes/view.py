@@ -198,16 +198,14 @@ class _CalendarioPopup(tk.Toplevel):
 def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     """Genera un PDF profesional con la tabla de retiros usando reportlab."""
 
-    # Colores corporativos
-    AZUL_OSCURO  = colors.HexColor("#0D2B6B")   # encabezado principal
-    AZUL_MEDIO   = colors.HexColor("#1565C0")   # subencabezado
-    AZUL_CLARO   = colors.HexColor("#1976D2")   # acento
+    AZUL_OSCURO  = colors.HexColor("#0D2B6B")
+    AZUL_MEDIO   = colors.HexColor("#1565C0")
+    AZUL_CLARO   = colors.HexColor("#1976D2")
     GRIS_LINEA   = colors.HexColor("#B0BEC5")
     FILA_PAR     = colors.HexColor("#EEF4FF")
     FILA_IMPAR   = colors.white
     TEXTO_HEADER = colors.white
     TEXTO_DATA   = colors.HexColor("#212121")
-    NARANJA_TOTAL= colors.HexColor("#E65100")
 
     doc = SimpleDocTemplate(
         ruta,
@@ -220,50 +218,33 @@ def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     styles = getSampleStyleSheet()
     story  = []
 
-    # ── Estilos de texto ──────────────────────────────────────────────────────
     titulo_style = ParagraphStyle(
-        "titulo",
-        parent=styles["Title"],
-        fontSize=18,
-        textColor=AZUL_OSCURO,
-        spaceAfter=2,
-        fontName="Helvetica-Bold",
-        leading=22,
+        "titulo", parent=styles["Title"],
+        fontSize=18, textColor=AZUL_OSCURO,
+        spaceAfter=2, fontName="Helvetica-Bold", leading=22,
     )
     subtitulo_style = ParagraphStyle(
-        "subtitulo",
-        parent=styles["Normal"],
-        fontSize=10,
-        textColor=AZUL_MEDIO,
-        spaceAfter=2,
-        fontName="Helvetica-Bold",
+        "subtitulo", parent=styles["Normal"],
+        fontSize=10, textColor=AZUL_MEDIO,
+        spaceAfter=2, fontName="Helvetica-Bold",
     )
     meta_style = ParagraphStyle(
-        "meta",
-        parent=styles["Normal"],
-        fontSize=8.5,
-        textColor=colors.HexColor("#546E7A"),
-        spaceAfter=14,
-        fontName="Helvetica",
+        "meta", parent=styles["Normal"],
+        fontSize=8.5, textColor=colors.HexColor("#546E7A"),
+        spaceAfter=14, fontName="Helvetica",
     )
 
-    # ── Encabezado del documento ──────────────────────────────────────────────
     story.append(Paragraph("Reporte de Retiros - OfficeMax", titulo_style))
     story.append(Paragraph(f"Tipo: {tipo}  ·  Período: {periodo}", subtitulo_style))
     story.append(Paragraph(
         f"Generado el {datetime.now().strftime('%d/%m/%Y')} a las {datetime.now().strftime('%H:%M')} hrs",
         meta_style
     ))
-
-    # Línea divisoria bajo el encabezado
     story.append(HRFlowable(width="100%", thickness=1.5, color=AZUL_MEDIO, spaceAfter=12))
 
-    # ── Tabla de datos ────────────────────────────────────────────────────────
-    # Nuevo orden: No. Transacción | Importe | Caja | Usuario | Fecha
     encabezado = [list(COLUMNAS_HEADER)]
     data_rows  = [list(f) for f in filas]
 
-    # Fila de totales (suma de importe si es numérico)
     total_importe = ""
     try:
         suma = sum(
@@ -277,16 +258,13 @@ def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     fila_total = ["TOTAL", total_importe, "", "", f"{len(filas)} registros"]
     data = encabezado + data_rows + [fila_total]
 
-    # Anchos proporcionales: Transacción, Importe, Caja, Usuario, Fecha
     col_widths = [2.1*inch, 1.5*inch, 1.3*inch, 1.8*inch, 1.4*inch]
     num_filas  = len(data)
-    num_datos  = num_filas - 2  # sin encabezado ni total
+    num_datos  = num_filas - 2
 
     tbl = Table(data, colWidths=col_widths, repeatRows=1)
 
-    # Construir estilos por fila para el alternado
     style_cmds = [
-        # ── Encabezado ──────────────────────────────────────────────────────
         ("BACKGROUND",    (0, 0), (-1, 0), AZUL_OSCURO),
         ("TEXTCOLOR",     (0, 0), (-1, 0), TEXTO_HEADER),
         ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -296,16 +274,12 @@ def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
         ("TOPPADDING",    (0, 0), (-1, 0), 9),
         ("BOTTOMPADDING", (0, 0), (-1, 0), 9),
         ("LINEBELOW",     (0, 0), (-1, 0), 2, AZUL_CLARO),
-
-        # ── Datos ───────────────────────────────────────────────────────────
         ("FONTNAME",      (0, 1), (-1, num_datos), "Helvetica"),
         ("FONTSIZE",      (0, 1), (-1, num_datos), 9),
         ("ALIGN",         (0, 1), (-1, num_datos), "CENTER"),
         ("VALIGN",        (0, 1), (-1, num_datos), "MIDDLE"),
         ("TOPPADDING",    (0, 1), (-1, num_datos), 6),
         ("BOTTOMPADDING", (0, 1), (-1, num_datos), 6),
-
-        # ── Fila de totales ─────────────────────────────────────────────────
         ("BACKGROUND",    (0, -1), (-1, -1), AZUL_OSCURO),
         ("TEXTCOLOR",     (0, -1), (-1, -1), TEXTO_HEADER),
         ("FONTNAME",      (0, -1), (-1, -1), "Helvetica-Bold"),
@@ -315,15 +289,11 @@ def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
         ("TOPPADDING",    (0, -1), (-1, -1), 8),
         ("BOTTOMPADDING", (0, -1), (-1, -1), 8),
         ("LINEABOVE",     (0, -1), (-1, -1), 1.5, AZUL_CLARO),
-        # El importe total en naranja destacado
         ("TEXTCOLOR",     (1, -1), (1, -1), colors.HexColor("#FFD54F")),
-
-        # ── Bordes generales ────────────────────────────────────────────────
         ("GRID",          (0, 0), (-1, -1), 0.4, GRIS_LINEA),
         ("BOX",           (0, 0), (-1, -1), 1,   AZUL_MEDIO),
     ]
 
-    # Filas alternadas
     for i in range(1, num_datos + 1):
         bg = FILA_PAR if i % 2 == 0 else FILA_IMPAR
         style_cmds.append(("BACKGROUND", (0, i), (-1, i), bg))
@@ -332,14 +302,11 @@ def exportar_pdf(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     tbl.setStyle(TableStyle(style_cmds))
     story.append(tbl)
 
-    # ── Nota al pie ───────────────────────────────────────────────────────────
     story.append(Spacer(1, 10))
     story.append(HRFlowable(width="100%", thickness=0.8, color=GRIS_LINEA, spaceAfter=6))
     nota_style = ParagraphStyle(
-        "nota",
-        parent=styles["Normal"],
-        fontSize=7.5,
-        textColor=colors.HexColor("#78909C"),
+        "nota", parent=styles["Normal"],
+        fontSize=7.5, textColor=colors.HexColor("#78909C"),
         fontName="Helvetica-Oblique",
     )
     story.append(Paragraph(
@@ -358,7 +325,6 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     ws = wb.active
     ws.title = "Reporte de Retiros - OfficeMax"
 
-    # ── Colores ───────────────────────────────────────────────────────────────
     COLOR_AZUL_OSCURO = "0D2B6B"
     COLOR_AZUL_MEDIO  = "1565C0"
     COLOR_AZUL_CLARO  = "BBDEFB"
@@ -367,19 +333,16 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     COLOR_TOTAL_MONTO = "FFD54F"
     COLOR_BLANCO      = "FFFFFF"
 
-    # ── Bordes ────────────────────────────────────────────────────────────────
     thin   = Side(style="thin",   color="B0BEC5")
     medium = Side(style="medium", color=COLOR_AZUL_MEDIO)
     borde_datos  = Border(left=thin,   right=thin,   top=thin,   bottom=thin)
     borde_header = Border(left=medium, right=medium, top=medium, bottom=medium)
 
-    # ── Fila 1: Banda de color superior (decorativa) ──────────────────────────
     ws.row_dimensions[1].height = 8
     for col in range(1, 6):
         c = ws.cell(row=1, column=col)
         c.fill = PatternFill("solid", fgColor=COLOR_AZUL_OSCURO)
 
-    # ── Fila 2: Título principal ──────────────────────────────────────────────
     ws.merge_cells("A2:E2")
     ws["A2"] = "REPORTE DE RETIROS - OFFICEMAX"
     ws["A2"].font      = Font(name="Calibri", bold=True, color=COLOR_BLANCO, size=16)
@@ -387,7 +350,6 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     ws["A2"].fill      = PatternFill("solid", fgColor=COLOR_AZUL_OSCURO)
     ws.row_dimensions[2].height = 32
 
-    # ── Fila 3: Subtítulo con metadatos ──────────────────────────────────────
     ws.merge_cells("A3:E3")
     ws["A3"] = f"Tipo: {tipo}   |   Período: {periodo}   |   Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')} hrs"
     ws["A3"].font      = Font(name="Calibri", italic=True, color=COLOR_AZUL_CLARO, size=10)
@@ -395,11 +357,8 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
     ws["A3"].fill      = PatternFill("solid", fgColor=COLOR_AZUL_OSCURO)
     ws.row_dimensions[3].height = 20
 
-    # ── Fila 4: Espacio ───────────────────────────────────────────────────────
     ws.row_dimensions[4].height = 6
 
-    # ── Fila 5: Encabezados de columna ────────────────────────────────────────
-    # Nuevo orden: No. Transacción | Importe | Caja | Usuario | Fecha
     for col_idx, header in enumerate(COLUMNAS_HEADER, start=1):
         cell = ws.cell(row=5, column=col_idx, value=header)
         cell.font      = Font(name="Calibri", bold=True, color=COLOR_BLANCO, size=11)
@@ -408,7 +367,6 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
         cell.border    = borde_header
     ws.row_dimensions[5].height = 22
 
-    # ── Filas de datos (desde fila 6) ─────────────────────────────────────────
     for row_idx, fila in enumerate(filas, start=6):
         es_par = (row_idx % 2 == 0)
         fill = PatternFill("solid", fgColor=COLOR_FILA_PAR) if es_par else None
@@ -421,7 +379,6 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
                 cell.fill = fill
         ws.row_dimensions[row_idx].height = 18
 
-    # ── Fila de totales ───────────────────────────────────────────────────────
     fila_total = len(filas) + 6
     total_importe = ""
     try:
@@ -440,28 +397,21 @@ def exportar_excel(ruta: str, tipo: str, periodo: str, filas: list[tuple]):
         cell.font      = Font(name="Calibri", bold=True, color=COLOR_BLANCO, size=11)
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.border    = borde_header
-    # Monto total en amarillo dorado
     ws.cell(row=fila_total, column=2).font = Font(
         name="Calibri", bold=True, color=COLOR_TOTAL_MONTO, size=11
     )
     ws.row_dimensions[fila_total].height = 22
 
-    # ── Fila decorativa final ─────────────────────────────────────────────────
     fila_deco = fila_total + 1
     ws.row_dimensions[fila_deco].height = 6
     for col in range(1, 6):
         ws.cell(row=fila_deco, column=col).fill = PatternFill("solid", fgColor=COLOR_AZUL_OSCURO)
 
-    # ── Anchos de columna ─────────────────────────────────────────────────────
-    # Nuevo orden: No. Transacción, Importe, Caja, Usuario, Fecha
     anchos = [22, 16, 12, 18, 14]
     for col_idx, ancho in enumerate(anchos, start=1):
         ws.column_dimensions[ws.cell(row=5, column=col_idx).column_letter].width = ancho
 
-    # ── Congelar encabezados ──────────────────────────────────────────────────
     ws.freeze_panes = "A6"
-
-    # ── Zoom y vista ─────────────────────────────────────────────────────────
     ws.sheet_view.zoomScale = 110
 
     wb.save(ruta)
@@ -485,29 +435,30 @@ class ReportesView(tk.Frame):
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # --- PANEL IZQUIERDO (CONTROLES) ---
-        ctrl_frame = tk.Frame(main_frame, bg=C_WHITE, width=280,
-                              highlightbackground="#E0E0E0", highlightthickness=1)
-        ctrl_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
-        ctrl_frame.pack_propagate(False)
+        self.ctrl_frame = tk.Frame(main_frame, bg=C_WHITE, width=280,
+                                   highlightbackground="#E0E0E0", highlightthickness=1)
+        self.ctrl_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
+        self.ctrl_frame.pack_propagate(False)
 
-        tk.Label(ctrl_frame, text="Parámetros", font=("Arial", 12, "bold"),
+        tk.Label(self.ctrl_frame, text="Parámetros", font=("Arial", 12, "bold"),
                  bg=C_WHITE, fg=C_HEADER).pack(pady=(15, 10), anchor="w", padx=15)
 
-        tk.Label(ctrl_frame, text="Tipo de Reporte:", font=("Arial", 10),
+        tk.Label(self.ctrl_frame, text="Tipo de Reporte:", font=("Arial", 10),
                  bg=C_WHITE, fg=C_TEXT).pack(anchor="w", padx=15)
-        self.combo_tipo = ttk.Combobox(ctrl_frame,
+        self.combo_tipo = ttk.Combobox(self.ctrl_frame,
                                        values=["Diario", "Semanal", "Mensual"],
                                        state="readonly")
         self.combo_tipo.current(0)
         self.combo_tipo.pack(fill=tk.X, padx=15, pady=(0, 15))
         self.combo_tipo.bind("<<ComboboxSelected>>", self._on_tipo_reporte_changed)
 
-        self.lbl_fecha = tk.Label(ctrl_frame, text="Fecha (DD/MM/AAAA):",
+        # ── Fecha inicio ──────────────────────────────────────────────────────
+        self.lbl_fecha = tk.Label(self.ctrl_frame, text="Fecha (DD/MM/AAAA):",
                                   font=("Arial", 10), bg=C_WHITE, fg=C_TEXT)
         self.lbl_fecha.pack(anchor="w", padx=15)
 
-        frm_fecha = tk.Frame(ctrl_frame, bg=C_WHITE)
-        frm_fecha.pack(fill=tk.X, padx=15, pady=(0, 20))
+        frm_fecha = tk.Frame(self.ctrl_frame, bg=C_WHITE)
+        frm_fecha.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         self.var_fecha = tk.StringVar(value=datetime.now().strftime("%d/%m/%Y"))
         self.entry_fecha = ttk.Entry(frm_fecha, textvariable=self.var_fecha)
@@ -522,22 +473,47 @@ class ReportesView(tk.Frame):
         )
         self.btn_cal.pack(side=tk.LEFT, padx=(3, 0))
 
-        tk.Button(ctrl_frame, text="Generar Previsualización",
+        # ── Fecha fin (solo Semanal) ───────────────────────────────────────────
+        self.lbl_fecha_fin = tk.Label(self.ctrl_frame, text="Fecha fin (DD/MM/AAAA):",
+                                      font=("Arial", 10), bg=C_WHITE, fg=C_TEXT)
+
+        frm_fecha_fin = tk.Frame(self.ctrl_frame, bg=C_WHITE)
+        self.frm_fecha_fin = frm_fecha_fin
+
+        self.var_fecha_fin = tk.StringVar()
+        self.entry_fecha_fin = ttk.Entry(frm_fecha_fin, textvariable=self.var_fecha_fin)
+        self.entry_fecha_fin.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.btn_cal_fin = tk.Button(
+            frm_fecha_fin, text="📅",
+            command=self._abrir_calendario_fin,
+            bg=C_WHITE, fg=C_ACCENT,
+            relief="flat", cursor="hand2",
+            font=("Arial", 12), padx=2
+        )
+        self.btn_cal_fin.pack(side=tk.LEFT, padx=(3, 0))
+
+        # Ocultos por defecto
+        self.lbl_fecha_fin.pack_forget()
+        self.frm_fecha_fin.pack_forget()
+
+        # ── Botón Generar ─────────────────────────────────────────────────────
+        tk.Button(self.ctrl_frame, text="Generar Previsualización",
                   bg=C_BTN, fg=C_WHITE, font=("Arial", 10, "bold"),
                   relief=tk.FLAT, cursor="hand2",
                   command=self._on_generar_reporte).pack(
-                      fill=tk.X, padx=15, pady=(0, 30), ipady=5)
+                      fill=tk.X, padx=15, pady=(10, 30), ipady=5)
 
-        tk.Label(ctrl_frame, text="Exportar Resultados", font=("Arial", 10, "bold"),
+        tk.Label(self.ctrl_frame, text="Exportar Resultados", font=("Arial", 10, "bold"),
                  bg=C_WHITE, fg=C_HEADER).pack(anchor="w", padx=15, pady=(10, 5))
 
-        tk.Button(ctrl_frame, text="Exportar a PDF",
+        tk.Button(self.ctrl_frame, text="Exportar a PDF",
                   bg="#D32F2F", fg=C_WHITE, font=("Arial", 10),
                   relief=tk.FLAT, cursor="hand2",
                   command=self._on_exportar_pdf).pack(
                       fill=tk.X, padx=15, pady=(5, 5), ipady=3)
 
-        tk.Button(ctrl_frame, text="Exportar a Excel",
+        tk.Button(self.ctrl_frame, text="Exportar a Excel",
                   bg="#2E7D32", fg=C_WHITE, font=("Arial", 10),
                   relief=tk.FLAT, cursor="hand2",
                   command=self._on_exportar_excel).pack(
@@ -552,7 +528,6 @@ class ReportesView(tk.Frame):
                  font=("Arial", 12, "bold"), bg=C_WHITE,
                  fg=C_HEADER).pack(anchor="w", padx=15, pady=(15, 10))
 
-        # Nuevo orden de columnas en la vista previa
         columnas = ("transaccion", "importe", "caja", "usuario", "fecha")
         self.tree = ttk.Treeview(preview_frame, columns=columnas, show="headings")
 
@@ -573,36 +548,48 @@ class ReportesView(tk.Frame):
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True,
                        padx=(15, 0), pady=(0, 15))
 
-    # ── calendario ────────────────────────────────────────────────────────────
+    # ── Calendarios ───────────────────────────────────────────────────────────
 
     def _abrir_calendario(self):
         tipo = self.combo_tipo.get()
-        if tipo == "Semanal":
-            messagebox.showinfo(
-                "Modo Semanal",
-                "Para el reporte semanal escribe la semana manualmente.\nEjemplo: Semana 10 - 2026",
-                parent=self
-            )
-            return
         modo = "mensual" if tipo == "Mensual" else "diario"
         _CalendarioPopup(self.entry_fecha, self.var_fecha, modo=modo)
 
-    # ── callbacks ────────────────────────────────────────────────────────────
+    def _abrir_calendario_fin(self):
+        _CalendarioPopup(self.entry_fecha_fin, self.var_fecha_fin, modo="diario")
+
+    # ── Callbacks ─────────────────────────────────────────────────────────────
 
     def _on_tipo_reporte_changed(self, event):
         tipo = self.combo_tipo.get()
+
         if tipo == "Diario":
             self.lbl_fecha.config(text="Fecha (DD/MM/AAAA):")
             self.var_fecha.set(datetime.now().strftime("%d/%m/%Y"))
             self.btn_cal.config(state="normal")
+            # Ocultar fecha fin
+            self.lbl_fecha_fin.pack_forget()
+            self.frm_fecha_fin.pack_forget()
+
         elif tipo == "Semanal":
-            self.lbl_fecha.config(text="Semana (Ej. Semana 10 - 2026):")
-            self.var_fecha.set("")
-            self.btn_cal.config(state="disabled")
+            self.lbl_fecha.config(text="Fecha inicio (DD/MM/AAAA):")
+            hoy   = datetime.now().date()
+            lunes = hoy - timedelta(days=hoy.weekday())
+            self.var_fecha.set(lunes.strftime("%d/%m/%Y"))
+            self.btn_cal.config(state="normal")
+            # Mostrar fecha fin justo debajo del entry de inicio
+            self.lbl_fecha_fin.pack(anchor="w", padx=15, after=self.entry_fecha.master)
+            self.frm_fecha_fin.pack(fill=tk.X, padx=15, pady=(0, 10), after=self.lbl_fecha_fin)
+            domingo = lunes + timedelta(days=6)
+            self.var_fecha_fin.set(domingo.strftime("%d/%m/%Y"))
+
         elif tipo == "Mensual":
             self.lbl_fecha.config(text="Mes (MM/AAAA):")
             self.var_fecha.set(datetime.now().strftime("%m/%Y"))
             self.btn_cal.config(state="normal")
+            # Ocultar fecha fin
+            self.lbl_fecha_fin.pack_forget()
+            self.frm_fecha_fin.pack_forget()
 
     def _on_generar_reporte(self):
         tipo        = self.combo_tipo.get()
@@ -627,7 +614,6 @@ class ReportesView(tk.Frame):
                                 parent=self)
             return
 
-        # Nuevo orden: No. Transacción, Importe, Caja, Usuario, Fecha
         for r in retiros:
             self.tree.insert("", tk.END, values=(
                 r["numero_transaccion"],
@@ -647,26 +633,23 @@ class ReportesView(tk.Frame):
             return fecha, fecha
 
         elif tipo == "Semanal":
-            # Espera "Semana N - AAAA"
             try:
-                partes  = fecha_texto.replace("Semana", "").strip().split("-")
-                semana  = int(partes[0].strip())
-                año     = int(partes[1].strip())
-                # Lunes de esa semana ISO
-                lunes   = datetime.strptime(f"{año}-W{semana:02d}-1", "%Y-W%W-%w").date()
-                domingo = lunes + timedelta(days=6)
-                return lunes, domingo
-            except Exception:
-                raise ValueError(
-                    "Formato de semana incorrecto.\nUsa el formato: Semana 10 - 2026"
-                )
+                fecha_inicio = datetime.strptime(fecha_texto, "%d/%m/%Y").date()
+            except ValueError:
+                raise ValueError("Formato de fecha inicio incorrecto. Usa DD/MM/AAAA.")
+            try:
+                fecha_fin = datetime.strptime(self.var_fecha_fin.get().strip(), "%d/%m/%Y").date()
+            except ValueError:
+                raise ValueError("Formato de fecha fin incorrecto. Usa DD/MM/AAAA.")
+            if fecha_fin < fecha_inicio:
+                raise ValueError("La fecha fin no puede ser anterior a la fecha inicio.")
+            return fecha_inicio, fecha_fin
 
         elif tipo == "Mensual":
             try:
                 fecha = datetime.strptime(fecha_texto, "%m/%Y").date()
             except ValueError:
                 raise ValueError("Formato de mes incorrecto. Usa MM/AAAA.")
-            # Primer y último día del mes
             import calendar as _cal
             ultimo_dia = _cal.monthrange(fecha.year, fecha.month)[1]
             return fecha.replace(day=1), fecha.replace(day=ultimo_dia)

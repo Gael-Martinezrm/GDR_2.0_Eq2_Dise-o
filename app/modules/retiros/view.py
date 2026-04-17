@@ -215,9 +215,9 @@ class RetirosView(tk.Frame):
             font=("Arial", 16)
         ).pack(side="left", padx=5)
 
-        self.filtro_caja = tk.StringVar(value="Todas")
+        self.filtro_caja = tk.StringVar(value="Todas las cajas")
         self.combo_caja = ttk.Combobox(frm_filtros, textvariable=self.filtro_caja,
-                                       values=["Todas"], width=15, state="readonly")
+                                       values=["Todas las cajas"], width=15, state="readonly")
         self.combo_caja.pack(side="left", padx=(0, 10))
 
         styled_button(frm_filtros, "Filtrar", self._on_filtrar, width=8).pack(side="left")
@@ -228,14 +228,18 @@ class RetirosView(tk.Frame):
 
         columnas = ["Retiro #", "Transacción #", "Fecha", "Hora Depósito",
                     "Caja", "Monto", "Acumulado", "Usuario", "Observaciones"]
-        anchos   = [70, 100, 90, 100, 90, 80, 90, 130, 200]
+        anchos   = [70, 100, 90, 100, 90, 80, 90, 130, 300]
 
         frm_tree, self.tabla = make_treeview(frm_tabla, columnas, anchos, height=18)
         frm_tree.pack(fill="both", expand=True)
 
+        # make_treeview ya crea todas las columnas con anchor="w".
+        # Solo sobreescribimos las columnas que deben ir centradas.
+        COLUMNAS_CENTRADAS = {"col0", "col1", "col2", "col3", "col4", "col5", "col6", "col7"}
         for col_id in self.tabla["columns"]:
-            self.tabla.column(col_id, anchor="center")
-            self.tabla.heading(col_id, anchor="center")
+            if col_id in COLUMNAS_CENTRADAS:
+                self.tabla.column(col_id, anchor="center")
+                self.tabla.heading(col_id, anchor="center")
 
         # Eventos de selección / doble clic
         self.tabla.bind("<<TreeviewSelect>>", self._on_seleccion)
@@ -250,7 +254,7 @@ class RetirosView(tk.Frame):
     def _cargar_cajas(self):
         try:
             self.cajas_cache = cajas_model.obtener_cajas(solo_activas=True)
-            self.combo_caja['values'] = ["Todas"] + [c["nombre"] for c in self.cajas_cache]
+            self.combo_caja['values'] = ["Todas las cajas"] + [c["nombre"] for c in self.cajas_cache]
         except Exception as e:
             messagebox.showerror("Error", f"No se pudieron cargar las cajas: {e}")
 
@@ -261,7 +265,7 @@ class RetirosView(tk.Frame):
 
             fecha_obj = datetime.strptime(self.filtro_fecha.get(), "%d/%m/%Y").date()
 
-            if self.filtro_caja.get() == "Todas":
+            if self.filtro_caja.get() == "Todas las cajas":
                 retiros = retiros_model.obtener_retiros_por_fecha(fecha_obj)
             else:
                 caja_sel = next((c for c in self.cajas_cache
@@ -414,7 +418,7 @@ class _DialogoRetiro(tk.Toplevel):
         # Caja
         tk.Label(frm, text="Caja:", bg=C_WHITE, fg=C_TEXT,
                  font=("Arial", 10)).grid(row=1, column=0, sticky="w")
-        self.var_caja = tk.StringVar()
+        self.var_caja = tk.StringVar(value="— Seleccione una caja —")
         self.combo = ttk.Combobox(frm, textvariable=self.var_caja,
                                   values=[c["nombre"] for c in self.cajas],
                                   state="readonly", width=28)
